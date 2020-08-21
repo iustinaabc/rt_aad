@@ -21,7 +21,7 @@ def loadData(dataset,number,preprocessing,varargin):
     if dataset == 'das-2016':
         number = number+1
         # load data
-        mat = spio.loadmat('C:\\Users\\Xander\\Documents\\Project\\Code matlab\\code-xander\\zdata\\dataSubject'+str(number)+'.mat')
+        mat = spio.loadmat('data/dataSubject'+str(number)+'.mat')
         attendedEar = mat["attendedEar"][0]
         fs = 64
         trialLength = fs*60
