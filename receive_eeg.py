@@ -55,7 +55,7 @@ def receive_eeg(EEG_inlet, timeframe, marker_inlet=None, stamps_inlet=None, eeg=
             if i in [i*math.ceil(timeframe/trials)+timeframe/(2*trials) for i in range(trials)] and trials is not None:
                 shift(markers, -1, cval=mark)
 
-            # TODO: Stamps array to be filled
+            # TODO: Stamps array for synchronization to be filled
 
             i += 1
 

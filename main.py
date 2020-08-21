@@ -19,6 +19,7 @@ updatecov = False  # Using subject specific covariance matrix
 updatebias = False  # Using subject specific bias
 timeframeTraining = 36000  # in samples
 trainingTrials = 10  # parts of the EEG recording. Each trial has a specific speaker class.All classes should be balanced
+stimulusReconstruction = False  # is stimulus reconstruction algorithm used
 
 # SET-UP Initialize variables
 leftOrRight = None
@@ -36,29 +37,31 @@ lr_bal.set_volume_right(100)
 
 # SET-UP LSL Streams
 # resolve an EEG stream on the lab network
-print("looking for an EEG stream... ", end='')
+print("looking for an EEG stream... ")
 streams = resolve_stream('type', 'EEG')
 print("[STREAM FOUND]")
 
 # create a new inlet to read from the stream
 EEG_inlet = StreamInlet(streams[0])
 
-# # a marker stream on the lab network for labeling the classes for training subject
-# print("looking for a marker stream... ", end='')
-# streams = resolve_stream('type', 'Markers')
-# print("[STREAM FOUND]")
-#
-# # create a new inlet to read from the stream
-# marker_inlet = StreamInlet(streams[0])
-#
-# # Used for synchronization with audio playback
-# # a marker stream on the lab network
-# print("looking for a marker stream... ", end='')
-# streams = resolve_stream('type', 'Markers')
-# print("[STREAM FOUND]")
-#
-# # create a new inlet to read from the stream
-# marker_inlet = StreamInlet(streams[0])
+if True in [updateCSP,updatecov,updatebias]:
+    # a marker stream on the lab network for labeling the classes for training subject
+    print("looking for a marker stream... ")
+    streams = resolve_stream('type', 'Markers')
+    print("[STREAM FOUND]")
+
+    # create a new inlet to read from the stream
+    marker_inlet = StreamInlet(streams[0])
+
+if stimulusReconstruction:
+    # Used for synchronization with audio playback
+    # a marker stream on the lab network
+    print("looking for a marker stream... ", end='')
+    streams = resolve_stream('type', 'Markers')
+    print("[STREAM FOUND]")
+
+    # create a new inlet to read from the stream
+    marker_inlet = StreamInlet(streams[0])
 
 
 """ TRAINING OF THE FBCSP AND THE LDA SUBJECT INDEPENDENT OR SUBJECT SPECIFIC """
