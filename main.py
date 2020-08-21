@@ -24,7 +24,7 @@ leftOrRight = None
 
 # SET-UP Headphones
 # device_name = 'sysdefault'
-# control_name = 'Headphone+LO'
+# control_name = 'Headphone'
 
 # lr_bal = LRBalancer()
 # lr_bal.set_control(control_name, device_name)
