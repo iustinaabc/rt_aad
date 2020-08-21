@@ -52,7 +52,8 @@ class AudioPlayer:
 
         """
         self._device = alsaaudio.PCM(type=alsaaudio.PCM_PLAYBACK,
-                                     device=device_name)  
+                                     device=device_name,
+                                     cardindex=1)
 
 
     def init_play(self, wav_fn):
@@ -171,7 +172,8 @@ class LRBalancer:
 
         """
         self.control = alsaaudio.Mixer(control=control_name,
-                                       device=device_name)
+                                       device=device_name,
+                                       cardindex=1)
 
 
     # TODO refactor everything related to left and right as parameter
