@@ -77,14 +77,16 @@ while True:
     # Faded gain control towards left or right, stops when one channel falls below the volume threshold
     # Validation: previous decision is the same as this one
 
-    print("---Controlling volume---")
     if all(np.array(lr_bal.get_volume()) > volumeThreshold) and previousLeftOrRight == leftOrRight:
-        if leftOrRight == "left":
+        print("---Controlling volume---")
+        if leftOrRight == -1:
+            print("Left Increase")
             for i in range(3):
                 lr_bal.fade_right(LRBalancer.OUT, 5)
                 lr_bal.fade_left(LRBalancer.IN, 5)
                 time.sleep(5)
-        elif leftOrRight == "right":
+        elif leftOrRight == 1:
+            print("Right increase")
             for i in range(3):
                 lr_bal.fade_left(LRBalancer.OUT, 5)
                 lr_bal.fade_right(LRBalancer.IN, 5)
