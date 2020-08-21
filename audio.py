@@ -159,7 +159,7 @@ class LRBalancer:
         print(alsaaudio.mixers(device=device_name))
 
 
-    def set_control(self, control_name, device_name):
+    def set_control(self, control_name, device_name, cardindex):
         """
         Attach a desired control to this balancer object
 
@@ -173,7 +173,7 @@ class LRBalancer:
         """
         self.control = alsaaudio.Mixer(control=control_name,
                                        device=device_name,
-                                       cardindex=1)
+                                       cardindex=cardindex)
 
 
     # TODO refactor everything related to left and right as parameter
