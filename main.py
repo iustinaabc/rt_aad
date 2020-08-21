@@ -67,6 +67,7 @@ while True:
     eeg = receive_eeg(timeframe, datatype, overlap)
 
     # Classify eeg chunk into left or right attended speaker using CSP filters
+    print("---Classifying---")
     previousLeftOrRight = leftOrRight
     leftOrRight = classifier(eeg, CSP, coef, b)
     print(leftOrRight)
