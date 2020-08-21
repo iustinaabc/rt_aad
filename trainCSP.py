@@ -26,19 +26,15 @@ def trainCSP(X, y, npat, optmode, covMethod):
     """
 
     # Initialize
-    print(optmode)
     if optmode != 'traceratio' and optmode != 'ratiotrace':
         optmode = 'ratiotrace'
     # Divide into X for each class
     yc = np.unique(y)
-    print(optmode)
     indices1 = np.where(y == yc[0])
     indices2 = np.where(y == yc[1])
-    print(len(indices1[0]))
 
     X1 = X[:, :, indices1[0]]
     X2 = np.squeeze(X[:, :, indices2[0]])
-    print(X1.shape[1]*X1.shape[2])
     Xm1 = np.reshape(X1, (X1.shape[0], X1.shape[1]*X1.shape[2]))
     Xm2 = np.reshape(X2, (X2.shape[0], X2.shape[1]*X2.shape[2]))
 
@@ -64,7 +60,6 @@ def trainCSP(X, y, npat, optmode, covMethod):
         labda = np.diag(D)
 
         if True:
-            print(X1.shape, W.shape)
             Y1 = tmprod(X1, np.transpose(W))
             Y2 = tmprod(X2, np.transpose(W))
             Y1 = Y1.astype(np.float32)
@@ -92,7 +87,6 @@ def trainCSP(X, y, npat, optmode, covMethod):
         # tr[1] = np.trace(np.transpose(W)*S2*W)/np.trace(np.transpose(W)*(S1+S2)*W)
         tr[1] = np.trace(np.matmul(np.matmul(np.transpose(W), S2), W)) / \
         np.trace(np.matmul(np.matmul(np.transpose(W), (S1 + S2)), W))
-        print(tr[0], tr[1])
     elif optmode == 'traceratio':
 
         # Initialize
