@@ -23,14 +23,14 @@ trainingTrials = 10  # parts of the EEG recording. Each trial has a specific spe
 leftOrRight = None
 
 # SET-UP Headphones
-device_name = 'sysdefault'
-control_name = 'Headphone+LO'
+# device_name = 'sysdefault'
+# control_name = 'Headphone+LO'
 
-lr_bal = LRBalancer()
-lr_bal.set_control(control_name, device_name)
+# lr_bal = LRBalancer()
+# lr_bal.set_control(control_name, device_name)
 
-lr_bal.set_volume_left(100)
-lr_bal.set_volume_right(100)
+# lr_bal.set_volume_left(100)
+# lr_bal.set_volume_right(100)
 
 
 """ TRAINING OF THE FBCSP AND THE LDA SUBJECT INDEPENDENT OR SUBJECT SPECIFIC """
@@ -67,19 +67,21 @@ while True:
     # Classify eeg chunk into left or right attended speaker using CSP filters
     previousLeftOrRight = leftOrRight
     leftOrRight = classifier(eeg, CSP, coef, b)
+    print(leftOrRight)
 
     # Classify eeg chunk into left or right attended speaker using stimulus reconstruction
 
     # Faded gain control towards left or right, stops when one channel falls below the volume threshold
     # Validation: previous decision is the same as this one
-    if all(np.array(lr_bal.get_volume()) > volumeThreshold) and previousLeftOrRight == leftOrRight:
-        if leftOrRight == "left":
-            for i in range(3):
-                lr_bal.fade_right(LRBalancer.OUT, 5)
-                lr_bal.fade_left(LRBalancer.IN, 5)
-                time.sleep(5)
-        elif leftOrRight == "right":
-            for i in range(3):
-                lr_bal.fade_left(LRBalancer.OUT, 5)
-                lr_bal.fade_right(LRBalancer.IN, 5)
-                time.sleep(5)
+
+    # if all(np.array(lr_bal.get_volume()) > volumeThreshold) and previousLeftOrRight == leftOrRight:
+    #     if leftOrRight == "left":
+    #         for i in range(3):
+    #             lr_bal.fade_right(LRBalancer.OUT, 5)
+    #             lr_bal.fade_left(LRBalancer.IN, 5)
+    #             time.sleep(5)
+    #     elif leftOrRight == "right":
+    #         for i in range(3):
+    #             lr_bal.fade_left(LRBalancer.OUT, 5)
+    #             lr_bal.fade_right(LRBalancer.IN, 5)
+    #             time.sleep(5)

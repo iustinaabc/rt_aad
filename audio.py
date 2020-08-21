@@ -12,7 +12,7 @@ import multiprocessing
 import numpy as np
 
 import wave
-import pyalsaaudio
+import alsaaudio
 
 from pylsl import StreamInfo, StreamOutlet
 
