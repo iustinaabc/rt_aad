@@ -72,7 +72,7 @@ else:
     # Update the FBCSP and LDA on eeg of the subject (subject specific)
 
     # Receive the eeg used for training
-    eeg, markers = receive_eeg(timeframeTraining, datatype, trainingTrials)
+    eeg, markers = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, trials=trainingTrials)
     trialSize = math.floor(timeframeTraining / trainingTrials)
     CSPSS, coefSS, bSS = trainFilters(eeg=eeg, markers=markers, trialSize=trialSize, fs=samplingFrequency)
 
@@ -91,7 +91,7 @@ print('---Starting the system---')
 while True:
     # Receive EEG from LSL
     print("---Receiving EEG---")
-    eeg = receive_eeg(timeframe, datatype, overlap)
+    eeg = receive_eeg(EEG_inlet, timeframe, datatype=datatype, overlap=overlap, eeg=eeg)
 
     # Classify eeg chunk into left or right attended speaker using CSP filters
     print("---Classifying---")

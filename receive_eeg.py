@@ -2,7 +2,7 @@ from scipy.ndimage.interpolation import shift
 import numpy as np
 import math
 
-def receive_eeg(timeframe, eeg=None, overlap=0, trials=None, datatype=np.float32):
+def receive_eeg(EEG_inlet, timeframe, marker_inlet=None, stamps_inlet=None, eeg=None, stamps=None, overlap=0, trials=None, datatype=np.float32):
     """
     Receives the EEG and markers from LabStreamingLayer and shifts them into the eeg array according to the timeframe
     and overlap. Markers are used to define the class of each EEG trial, when EEG is used for training.
@@ -28,8 +28,11 @@ def receive_eeg(timeframe, eeg=None, overlap=0, trials=None, datatype=np.float32
     # Initialize variables
     if eeg is None:
         eeg = np.array([0 in range(timeframe)], dtype=datatype)
-    if trials is not None:
+    if trials is not None:  # For Training
         markers = np.array([0 in range(trials)], dtype=int)
+    if stamps is not None:  # For Synchronization
+        # TODO: Fix array (length)
+        markers = np.array([0 in range(trials)], dtype=datatype)
     sample = None
     i = 0
 
@@ -37,7 +40,11 @@ def receive_eeg(timeframe, eeg=None, overlap=0, trials=None, datatype=np.float32
     while True:
         lastSample = sample
         sample, timestamps = EEG_inlet.pull_sample()
-        mark, timestamps = marker_inlet.pull_sample()
+
+        if marker_inlet is not None:
+            mark, timestamps = marker_inlet.pull_sample()
+        if stamps_inlet is not None:
+            stamps, timestamps = stamps_inlet.pull_sample()
 
         # Add sample to the array if the samples is new
         if lastSample != sample:
@@ -47,14 +54,15 @@ def receive_eeg(timeframe, eeg=None, overlap=0, trials=None, datatype=np.float32
             # the right marker is reported)
             if i in [i*math.ceil(timeframe/trials)+timeframe/(2*trials) for i in range(trials)] and trials is not None:
                 shift(markers, -1, cval=mark)
+
+            # TODO: Stamps array to be filled
+
             i += 1
 
         # If enough samples are added, eeg and markers are returned
         if i == (timeframe - overlap):
             break
 
-
-    # check?
     return eeg, markers
 
 
