@@ -56,7 +56,7 @@ def loadData(dataset,number,preprocessing,varargin):
     trialLength = eeg.shape[1]
 
     # Preprocessing
-    if preprocessing["eegChanSel"]:
+    if preprocessing["eegChanSel"] != []:
         eeg = eeg[preprocessing["eegChanSel"], :, :]
 
     if preprocessing["normalization"]:

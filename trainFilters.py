@@ -157,7 +157,6 @@ def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, 
     CSP = dict()
     for band in range(0, len(params["filterbankBands"][0])):
         Xtrain = np.squeeze(X[:, band, :, :])
-        print(Xtrain.shape, "in train band genomen en idxtrain genomen")
 
         # Covariance weighting
 
