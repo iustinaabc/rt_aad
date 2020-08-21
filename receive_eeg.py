@@ -1,4 +1,3 @@
-from pylsl import StreamInlet, resolve_stream
 from scipy.ndimage.interpolation import shift
 import numpy as np
 import math
@@ -25,31 +24,6 @@ def receive_eeg(timeframe, eeg=None, overlap=0, trials=None, datatype=np.float32
     :return: eeg: (np.array) 2-dimensional array of eeg samples filled according to the timeframe and overlap
              markers: (np.array) 1-dimensional array to specify the class (attended speaker) of each trial recorded.
     """
-
-    # resolve an EEG stream on the lab network
-    print("looking for an EEG stream... ", end='')
-    streams = resolve_stream('type', 'EEG')
-    print("[STREAM FOUND]")
-
-    # create a new inlet to read from the stream
-    EEG_inlet = StreamInlet(streams[0])
-
-    # a marker stream on the lab network for labeling the classes for training subject
-    print("looking for a marker stream... ", end='')
-    streams = resolve_stream('type', 'Markers')
-    print("[STREAM FOUND]")
-
-    # create a new inlet to read from the stream
-    marker_inlet = StreamInlet(streams[0])
-
-    # Used for synchronization with audio playback
-    # a marker stream on the lab network
-    print("looking for a marker stream... ", end='')
-    streams = resolve_stream('type', 'Markers')
-    print("[STREAM FOUND]")
-
-    # create a new inlet to read from the stream
-    marker_inlet = StreamInlet(streams[0])
 
     # Initialize variables
     if eeg is None:

@@ -5,6 +5,7 @@ from audio import LRBalancer
 from classifier import classifier
 from receive_eeg import receive_eeg
 from trainFilters import trainFilters
+from pylsl import StreamInlet, resolve_stream
 
 # Parameters
 samplingFrequency = 64 # Hz
@@ -32,6 +33,32 @@ lr_bal.set_control(control_name, device_name, cardindex)
 
 lr_bal.set_volume_left(100)
 lr_bal.set_volume_right(100)
+
+# SET-UP LSL Streams
+# resolve an EEG stream on the lab network
+print("looking for an EEG stream... ", end='')
+streams = resolve_stream('type', 'EEG')
+print("[STREAM FOUND]")
+
+# create a new inlet to read from the stream
+EEG_inlet = StreamInlet(streams[0])
+
+# # a marker stream on the lab network for labeling the classes for training subject
+# print("looking for a marker stream... ", end='')
+# streams = resolve_stream('type', 'Markers')
+# print("[STREAM FOUND]")
+#
+# # create a new inlet to read from the stream
+# marker_inlet = StreamInlet(streams[0])
+#
+# # Used for synchronization with audio playback
+# # a marker stream on the lab network
+# print("looking for a marker stream... ", end='')
+# streams = resolve_stream('type', 'Markers')
+# print("[STREAM FOUND]")
+#
+# # create a new inlet to read from the stream
+# marker_inlet = StreamInlet(streams[0])
 
 
 """ TRAINING OF THE FBCSP AND THE LDA SUBJECT INDEPENDENT OR SUBJECT SPECIFIC """
