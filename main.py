@@ -44,7 +44,7 @@ print("[STREAM FOUND]")
 # create a new inlet to read from the stream
 EEG_inlet = StreamInlet(streams[0])
 
-if True in [updateCSP,updatecov,updatebias]:
+if True in [updateCSP,updatecov,updatebias]:  # Markers are used for labels of EEG to train FBCSP and LDA
     # a marker stream on the lab network for labeling the classes for training subject
     print("looking for a marker stream... ")
     streams = resolve_stream('type', 'Markers')
@@ -53,7 +53,8 @@ if True in [updateCSP,updatecov,updatebias]:
     # create a new inlet to read from the stream
     marker_inlet = StreamInlet(streams[0])
 
-if stimulusReconstruction:
+if stimulusReconstruction:  # Stamps stream is used for synchronization audio playback and eeg recordings
+    # TODO: set up name for stamps stream
     # Used for synchronization with audio playback
     # a marker stream on the lab network
     print("looking for a marker stream... ", end='')
