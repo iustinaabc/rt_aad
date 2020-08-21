@@ -63,6 +63,7 @@ else:
 print('---Starting the system---')
 while True:
     # Receive EEG from LSL
+    print("---Receiving EEG---")
     eeg = receive_eeg(timeframe, datatype, overlap)
 
     # Classify eeg chunk into left or right attended speaker using CSP filters
