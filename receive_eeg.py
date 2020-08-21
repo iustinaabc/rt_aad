@@ -10,19 +10,20 @@ def receive_eeg(timeframe, eeg=None, overlap=0, trials=None, datatype=np.float32
 
     Parameters
     ----------
-    :param timeframe (int): The amount of EEG samples needed from LSL
+    :param timeframe: (int) The amount of EEG samples needed from LSL
 
-    :param eeg (numpy array): The previous eeg array to be filled according to the overlap
+    :param eeg: (numpy array) The previous eeg array to be filled according to the overlap
 
-    :param overlap (int): The amount of samples to be included and keep from the previous eeg array
+    :param overlap: (int) The amount of samples to be included and keep from the previous eeg array
 
-    :param trials (int): The amount of trials with a specific class used in the training of a subject
+    :param trials: (int) The amount of trials with a specific class used in the training of a subject
                          timeframe/trials should be the amount of samples for each trial
+                         -- Is None when eeg is not used for training --
 
-    :param datatype (datatype): Datatype for the eeg array
+    :param datatype: (datatype) Datatype for the eeg array
 
-    :return: eeg (np.array): 2-dimensional array of eeg samples filled according to the timeframe and overlap
-             markers (np.array): 1-dimensional array to specify the class (attended speaker) of each trial recorded.
+    :return: eeg: (np.array) 2-dimensional array of eeg samples filled according to the timeframe and overlap
+             markers: (np.array) 1-dimensional array to specify the class (attended speaker) of each trial recorded.
     """
 
     # resolve an EEG stream on the lab network
@@ -33,6 +34,15 @@ def receive_eeg(timeframe, eeg=None, overlap=0, trials=None, datatype=np.float32
     # create a new inlet to read from the stream
     EEG_inlet = StreamInlet(streams[0])
 
+    # a marker stream on the lab network for labeling the classes for training subject
+    print("looking for a marker stream... ", end='')
+    streams = resolve_stream('type', 'Markers')
+    print("[STREAM FOUND]")
+
+    # create a new inlet to read from the stream
+    marker_inlet = StreamInlet(streams[0])
+
+    # Used for synchronization with audio playback
     # a marker stream on the lab network
     print("looking for a marker stream... ", end='')
     streams = resolve_stream('type', 'Markers')
@@ -44,7 +54,8 @@ def receive_eeg(timeframe, eeg=None, overlap=0, trials=None, datatype=np.float32
     # Initialize variables
     if eeg is None:
         eeg = np.array([0 in range(timeframe)], dtype=datatype)
-    markers = np.array([0 in range(trials)], dtype=int)
+    if trials is not None:
+        markers = np.array([0 in range(trials)], dtype=int)
     sample = None
     i = 0
 
@@ -60,7 +71,7 @@ def receive_eeg(timeframe, eeg=None, overlap=0, trials=None, datatype=np.float32
 
             # Every new trial the class is reported in the markers array (+timeframe/(2*trials) samples to make sure
             # the right marker is reported)
-            if i in [i*math.ceil(timeframe/trials)+timeframe/(2*trials) for i in range(trials)]:
+            if i in [i*math.ceil(timeframe/trials)+timeframe/(2*trials) for i in range(trials)] and trials is not None:
                 shift(markers, -1, cval=mark)
             i += 1
 
@@ -74,5 +85,5 @@ def receive_eeg(timeframe, eeg=None, overlap=0, trials=None, datatype=np.float32
 
 
 if __name__ == '__main__':
-    lst = np.array([2,3])
+    lst = np.array([2, 3])
     print(all(lst > 1))
