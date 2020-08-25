@@ -7,7 +7,6 @@ def segment(vector,size):
     Segments in the time dimension (DIMENSION 3RD) added to the last dimension (DIMENSION 4TH)
     """
     top = math.floor(vector.shape[2]/size)
-    print(vector.shape)
     new_vector = np.full((vector.shape[0],vector.shape[1],size,vector.shape[3], top),0,dtype=np.float32)
 
     for x in range(0,top):

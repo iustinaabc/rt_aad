@@ -2,7 +2,8 @@ from scipy.ndimage.interpolation import shift
 import numpy as np
 import math
 
-def receive_eeg(EEG_inlet, timeframe, marker_inlet=None, stamps_inlet=None, eeg=None, stamps=None, overlap=0, trials=None, datatype=np.float32):
+def receive_eeg(EEG_inlet, timeframe, marker_inlet=None, stamps_inlet=None, eeg=None, stamps=None, overlap=0,
+                trials=None, datatype=np.float32, channels=21):
     """
     Receives the EEG and markers from LabStreamingLayer and shifts them into the eeg array according to the timeframe
     and overlap. Markers are used to define the class of each EEG trial, when EEG is used for training.
@@ -27,9 +28,16 @@ def receive_eeg(EEG_inlet, timeframe, marker_inlet=None, stamps_inlet=None, eeg=
 
     # Initialize variables
     if eeg is None:
-        eeg = np.array([0 in range(timeframe)], dtype=datatype)
+        eeg = np.zeros((timeframe, channels), dtype=datatype)
+    else:
+        # eeg samples are added in the time dimension
+        eeg = np.transpose(eeg)
+
     if trials is not None:  # For Training
         markers = np.array([0 in range(trials)], dtype=int)
+    else:
+        markers = None
+
     if stamps is not None:  # For Synchronization
         # TODO: Fix array (length)
         markers = np.array([0 in range(trials)], dtype=datatype)
@@ -48,11 +56,13 @@ def receive_eeg(EEG_inlet, timeframe, marker_inlet=None, stamps_inlet=None, eeg=
 
         # Add sample to the array if the samples is new
         if lastSample != sample:
-            shift(eeg, -1, cval=sample)
+            # shift(eeg, -1, cval=sample)
+            eeg = np.roll(eeg, -1, axis=0)
+            eeg = np.append(eeg[:-1], [sample], axis=0)
 
             # Every new trial the class is reported in the markers array (+timeframe/(2*trials) samples to make sure
             # the right marker is reported)
-            if i in [i*math.ceil(timeframe/trials)+timeframe/(2*trials) for i in range(trials)] and trials is not None:
+            if trials is not None and i in [i*math.ceil(timeframe/trials)+timeframe/(2*trials) for i in range(trials)]:
                 shift(markers, -1, cval=mark)
 
             # TODO: Stamps array for synchronization to be filled
@@ -63,9 +73,11 @@ def receive_eeg(EEG_inlet, timeframe, marker_inlet=None, stamps_inlet=None, eeg=
         if i == (timeframe - overlap):
             break
 
-    return eeg, markers
+    return np.transpose(eeg), markers
 
 
 if __name__ == '__main__':
-    lst = np.array([2, 3])
-    print(all(lst > 1))
+    lst = np.array([[2, 3, 4, 5], [1, 2, 3, 4], [4, 5, 6, 7]])
+    print(np.append(lst[:-1], [[3, 4, 5, 6]],axis=0))
+    filterbankBands = np.array([[14], [26]])
+    print(len(filterbankBands[0]))
