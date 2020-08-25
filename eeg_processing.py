@@ -12,12 +12,12 @@ from pylsl import StreamInlet, resolve_stream
 import pylsl.pylsl
 
 import eeg_emulation
-import audio
+# import audio
 
 
 def main():
     # start emulating EEG, this block is to be removed in the real set-up
-    eeg_emulator = multiprocessing.Process(target=rtlocus.eeg_emulation.emulate)
+    eeg_emulator = multiprocessing.Process(target=eeg_emulation.emulate)
     eeg_emulator.daemon = True # emulator gets killed when main terminates, not sure if necessary
     eeg_emulator.start()
     # when using an external EEG device, consider the following page:
@@ -26,9 +26,9 @@ def main():
     # such synchronization matters.
 
     # start audio test case
-    audio_system = multiprocessing.Process(target=rtlocus.audio.main)
-    # audio_system.daemon = True
-    audio_system.start()
+    # audio_system = multiprocessing.Process(target=audio.main)
+    # # audio_system.daemon = True
+    # audio_system.start()
 
     # resolve an EEG stream on the lab network
     print("looking for an EEG stream... ", end = '')
