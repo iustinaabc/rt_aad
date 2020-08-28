@@ -26,10 +26,10 @@ def main():
     stimulusReconstruction = False  # Use of stimulus reconstruction
 
     # Emulator SET-UP
-    eeg_emulator = multiprocessing.Process(target=emulate)
-    eeg_emulator.daemon = True
-    time.sleep(5)
-    eeg_emulator.start()
+    #eeg_emulator = multiprocessing.Process(target=emulate)
+    #eeg_emulator.daemon = True
+    #time.sleep(5)
+    #eeg_emulator.start()
 
     # SET-UP Initialize variables
     leftOrRight = None
