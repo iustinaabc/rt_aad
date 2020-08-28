@@ -90,7 +90,7 @@ def main():
         # Update the FBCSP and LDA on eeg of the subject (subject specific)
 
         # Receive the eeg used for training
-        eeg, mark = receive_eeg(EEG_inlet timeframeTraining, datatype=datatype, trials=trainingTrials, channels=channels)
+        eeg, mark = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, trials=trainingTrials, channels=channels)
         trialSize = math.floor(timeframeTraining / trainingTrials)
         CSPSS, coefSS, bSS = trainFilters(eeg=eeg, markers=markers, trialSize=trialSize, fs=samplingFrequency)
 
