@@ -26,6 +26,7 @@ def main():
     timeframeTraining = 400  # in samples
     trainingTrials = 1  # parts of the EEG recording. Each trial has a specific speaker class.All classes should be balanced
     stimulusReconstruction = False  # Use of stimulus reconstruction
+    markers = np.array([1])
 
     # Emulator SET-UP
     # eeg_emulator = multiprocessing.Process(target=emulate)
@@ -57,14 +58,14 @@ def main():
     # create a new inlet to read from the stream
     EEG_inlet = StreamInlet(streams[0])
 
-    if True in [updateCSP,updatecov,updatebias]:  # Markers are used for labels of EEG to train FBCSP and LDA
-        # a marker stream on the lab network for labeling the classes for training subject
-        print("looking for a marker stream... ", end='')
-        streams = resolve_stream('type', 'Markers')
-        print("[STREAM FOUND]")
-
-        # create a new inlet to read from the stream
-        marker_inlet = StreamInlet(streams[0])
+    # if True in [updateCSP,updatecov,updatebias]:  # Markers are used for labels of EEG to train FBCSP and LDA
+    #     # a marker stream on the lab network for labeling the classes for training subject
+    #     print("looking for a marker stream... ", end='')
+    #     streams = resolve_stream('type', 'Markers')
+    #     print("[STREAM FOUND]")
+    #
+    #     # create a new inlet to read from the stream
+    #     marker_inlet = StreamInlet(streams[0])
 
     if stimulusReconstruction:  # Stamps stream is used for synchronization audio playback and eeg recordings
         # TODO: set up name for stamps stream
