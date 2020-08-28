@@ -92,7 +92,7 @@ def main():
         # Receive the eeg used for training
         eeg, mark = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, trials=trainingTrials, channels=channels)
         trialSize = math.floor(timeframeTraining / trainingTrials)
-        CSPSS, coefSS, bSS = trainFilters(eeg=eeg, markers=markers, trialSize=trialSize, fs=samplingFrequency)
+        CSPSS, coefSS, bSS = trainFilters(usingDataset=False, eeg=eeg, markers=markers, trialSize=trialSize, fs=samplingFrequency)
 
         """ CSP training """
         if updateCSP:
