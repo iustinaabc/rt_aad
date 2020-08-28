@@ -62,7 +62,7 @@ def receive_eeg(EEG_inlet, timeframe, marker_inlet=None, stamps_inlet=None, eeg=
 
             # Every new trial the class is reported in the markers array (+timeframe/(2*trials) samples to make sure
             # the right marker is reported)
-            if trials is not None and i in [i*math.ceil(timeframe/trials)+timeframe/(2*trials) for i in range(trials)]:
+            if marker_inlet is not None and i in [i*math.ceil(timeframe/trials)+timeframe/(2*trials) for i in range(trials)]:
                 shift(markers, -1, cval=mark)
 
             # TODO: Stamps array for synchronization to be filled
