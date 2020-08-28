@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import numpy as np
 import time
 import math
@@ -12,24 +14,24 @@ from eeg_emulation import emulate
 def main():
     # Parameters
     samplingFrequency = 64 # Hz
-    channels = 64 # Channels on the EEG cap
+    channels = 24 # Channels on the EEG cap
     timeframe = 100  # in samples (timeframe / samplingFrequency = time in seconds)
     overlap = 30  # in samples
     datatype = np.float32
     volumeThreshold = 50  # in percent
     trainingDataset = "das-2016"
-    updateCSP = False  # Using subject specific CSP filters
-    updatecov = False  # Using subject specific covariance matrix
-    updatebias = False  # Using subject specific bias
-    timeframeTraining = 36000  # in samples
-    trainingTrials = 10  # parts of the EEG recording. Each trial has a specific speaker class.All classes should be balanced
+    updateCSP = True  # Using subject specific CSP filters
+    updatecov = True  # Using subject specific covariance matrix
+    updatebias = True  # Using subject specific bias
+    timeframeTraining = 400  # in samples
+    trainingTrials = 1  # parts of the EEG recording. Each trial has a specific speaker class.All classes should be balanced
     stimulusReconstruction = False  # Use of stimulus reconstruction
 
     # Emulator SET-UP
-    #eeg_emulator = multiprocessing.Process(target=emulate)
-    #eeg_emulator.daemon = True
-    #time.sleep(5)
-    #eeg_emulator.start()
+    # eeg_emulator = multiprocessing.Process(target=emulate)
+    # eeg_emulator.daemon = True
+    # time.sleep(5)
+    # eeg_emulator.start()
 
     # SET-UP Initialize variables
     leftOrRight = None
