@@ -41,7 +41,7 @@ class AudioPlayer:
         print(alsaaudio.pcms(alsaaudio.PCM_PLAYBACK))
 
 
-    def set_device(self, device_name):
+    def set_device(self, device_name, cardindex):
         """
         Set the playback device.
 
@@ -53,7 +53,7 @@ class AudioPlayer:
         """
         self._device = alsaaudio.PCM(type=alsaaudio.PCM_PLAYBACK,
                                      device=device_name,
-                                     cardindex=1)
+                                     cardindex)
 
 
     def init_play(self, wav_fn):
@@ -280,17 +280,17 @@ class LRBalancer:
 def main():
     # playback parameters (tested on Ubuntu 16.04 with Intel HDA audio card)
     device_name = 'sysdefault'
-    control_name = 'Headphone+LO'
+    control_name = 'Headphone'
     wav_fn = os.path.join(os.path.expanduser('~/Desktop'),
-                          'SineWaveMinus16.wav')
+                          'Pilot_1.wav')
 
     ap = AudioPlayer()
 
-    ap.set_device(device_name)
+    ap.set_device(device_name, cardindex)
     ap.init_play(wav_fn)
 
     lr_bal = LRBalancer()
-    lr_bal.set_control(control_name, device_name)
+    lr_bal.set_control(control_name, device_name, cardindex)
 
     lr_bal.set_volume_left(100)
     lr_bal.set_volume_right(100)

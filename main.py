@@ -23,10 +23,10 @@ def main():
     updateCSP = True  # Using subject specific CSP filters
     updatecov = True  # Using subject specific covariance matrix
     updatebias = True  # Using subject specific bias
-    timeframeTraining = 400  # in samples
-    trainingTrials = 1  # parts of the EEG recording. Each trial has a specific speaker class.All classes should be balanced
+    timeframeTraining = 400  # in samples of each trial with a specific class
+    # trainingTrials = 1  # parts of the EEG recording. Each trial has a specific speaker class.All classes should be balanced
     stimulusReconstruction = False  # Use of stimulus reconstruction
-    markers = np.array([1])
+    markers = np.array([1,2]) # First Left, then Right for training
 
     # Emulator SET-UP
     # eeg_emulator = multiprocessing.Process(target=emulate)
@@ -42,7 +42,14 @@ def main():
     # device_name = 'sysdefault'
     # control_name = 'Headphone'
     # cardindex = 1
-    #
+
+    wav_fn = os.path.join(os.path.expanduser('~/Desktop'), 'Pilot_1.wav')
+
+    ap = AudioPlayer()
+
+    ap.set_device(device_name, cardindex)
+    ap.init_play(wav_fn)
+
     # lr_bal = LRBalancer()
     # lr_bal.set_control(control_name, device_name, cardindex)
     #
@@ -58,27 +65,6 @@ def main():
     # create a new inlet to read from the stream
     EEG_inlet = StreamInlet(streams[0])
 
-    # if True in [updateCSP,updatecov,updatebias]:  # Markers are used for labels of EEG to train FBCSP and LDA
-    #     # a marker stream on the lab network for labeling the classes for training subject
-    #     print("looking for a marker stream... ", end='')
-    #     streams = resolve_stream('type', 'Markers')
-    #     print("[STREAM FOUND]")
-    #
-    #     # create a new inlet to read from the stream
-    #     marker_inlet = StreamInlet(streams[0])
-
-    if stimulusReconstruction:  # Stamps stream is used for synchronization audio playback and eeg recordings
-        # TODO: set up name for stamps stream
-        # Used for synchronization with audio playback
-        # a marker stream on the lab network
-        print("looking for a marker stream... ", end='')
-        streams = resolve_stream('type', 'Markers')
-        print("[STREAM FOUND]")
-
-        # create a new inlet to read from the stream
-        marker_inlet = StreamInlet(streams[0])
-
-
     """ TRAINING OF THE FBCSP AND THE LDA SUBJECT INDEPENDENT OR SUBJECT SPECIFIC """
     print("--- Training filters and LDA... ---")
 
@@ -90,8 +76,18 @@ def main():
         # Update the FBCSP and LDA on eeg of the subject (subject specific)
 
         # Receive the eeg used for training
-        eeg, mark = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, trials=trainingTrials, channels=channels)
-        trialSize = math.floor(timeframeTraining / trainingTrials)
+        print("Concentrate on the left speaker first")
+        time.sleep(4)
+
+        eeg, timestamps1 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
+        time.sleep(5)
+
+        print("Concentrate on the right speaker now")
+        time.sleep(4)
+        eeg, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining*2, datatype=datatype, eeg=eeg, channels=channels)
+        timestamps = np.concatenate((timestamps1, timestamps2))
+
+        trialSize = math.floor(timeframeTraining)
         CSPSS, coefSS, bSS = trainFilters(usingDataset=False, eeg=eeg, markers=markers, trialSize=trialSize, fs=samplingFrequency)
 
         """ CSP training """

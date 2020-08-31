@@ -83,7 +83,7 @@ def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, 
     if usingDataset:  # When the CSP filters and LDA is trained on a dataset (4-dimensional) and Subject Independent
         if dataset == "das-2016":
             # Inconsistente subject verwijderd (nr 7 (6+1))
-            trainingSet = set(range(1,11))-{6}
+            trainingSet = set(range(1, 11))-{6}
 
 
         firstTrainingSubject = True
@@ -127,27 +127,26 @@ def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, 
 
         # apply FB
         eegTemp = eeg
-        eeg = np.zeros((eeg.shape[0], len(params["filterbankBands"][0]), eeg.shape[1], eeg.shape[2]), dtype=np.float32)
+        eeg = np.zeros((eeg.shape[0], len(params["filterbankBands"][0]), eeg.shape[1]), dtype=np.float32)
         for band in range(len(params["filterbankBands"][0])):
             b, a = scipy.signal.iirfilter(8, np.array(
                 [2 * params["filterbankBands"][0, band] / fs, 2 * params["filterbankBands"][1, band] / fs]))
-            eeg[:, band, :, :] = np.transpose(scipy.signal.filtfilt(b, a, np.transpose(eegTemp, (1, 0, 2)), axis=0),
-                                              (1, 0, 2))
+            eeg[:, band, :] = np.transpose(scipy.signal.filtfilt(b, a, np.transpose(eegTemp, (1, 0)), axis=0),
+                                              (1, 0))
             # eeg now has dimensions channels x time x trials
-            mean = np.average(eeg[:, band, :, :], 1)
-            means = np.full((eeg.shape[2], eeg.shape[0], eeg.shape[3]), mean)
-            means = np.transpose(means, (1, 0, 2))
+            mean = np.average(eeg[:, band, :], 1)
+            means = np.full((eeg.shape[2], eeg.shape[0]), mean)
+            means = np.transpose(means, (1, 0))
 
-            eeg[:, band, :, :] = eeg[:, band, :, :] - means
+            eeg[:, band, :] = eeg[:, band, :] - means
         del eegTemp
 
         X = eeg
         labels = markers
 
         # Segment the EEG recording into the separate trials with a specific class in markers
-        X = X[:,:,:,np.newaxis]
-        X = np.transpose(X, (0, 2, 1, 3))
-        X = segment(X,trialSize)
+        X = X[:, :, :, np.newaxis]
+        X = segment(X, trialSize)
 
 
     """TRAIN CSP FILTERS"""
