@@ -43,15 +43,13 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
     while True:
         lastSample = sample
         sample, timestamps = EEG_inlet.pull_sample()
-        if first:
-            clock = local_clock()
-            first = False
             
         if timestamps:
             # Add sample to the array if the samples is new
             if lastSample != sample:
                 eeg = np.roll(eeg, -1, axis=0)
                 eeg = np.append(eeg[:-1], [sample], axis=0)
+                print(timestamps)
 
                 shift(stamps, -1, cval=timestamps)
 
