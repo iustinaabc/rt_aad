@@ -44,7 +44,7 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
     sample, timestamps = EEG_inlet.pull_sample()
     while starttime and (timestamps + EEG_inlet.time_correction() - starttime < 0):
         sample, timestamps = EEG_inlet.pull_sample()
-        # print(timestamps + EEG_inlet.time_correction() - starttime)
+        print(timestamps + EEG_inlet.time_correction() - starttime)
         pass
 
     # Pull in until full

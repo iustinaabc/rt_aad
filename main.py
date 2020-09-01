@@ -24,7 +24,7 @@ def main():
     updateCSP = True  # Using subject specific CSP filters
     updatecov = True  # Using subject specific covariance matrix
     updatebias = True  # Using subject specific bias
-    timeframeTraining = 30*samplingFrequency  # in samples of each trial with a specific class
+    timeframeTraining = 50*samplingFrequency  # in samples of each trial with a specific class
     windowLengthTraining = 2  # timeframe for training is split into windows of windowlength * fs for lda calculation
     # trainingTrials = 1  # parts of the EEG recording. Each trial has a specific speaker class.All classes should be balanced
     stimulusReconstruction = False  # Use of stimulus reconstruction
@@ -105,6 +105,9 @@ def main():
             coef = coefSS
         if updatebias:
             b = bSS
+
+        np.save('/home/rtaad/Desktop/left_eeg',eeg1)
+        np.save('/home/rtaad/Desktop/right_eeg', eeg2)
 
 
     print('---Starting the system---')
