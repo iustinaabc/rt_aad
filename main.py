@@ -8,7 +8,7 @@ from audio import LRBalancer, AudioPlayer
 from classifier import classifier
 from receive_eeg import receive_eeg
 from trainFilters import trainFilters
-from pylsl import StreamInlet, resolve_stream
+from pylsl import StreamInlet, resolve_stream, local_clock
 import multiprocessing
 from eeg_emulation import emulate
 
@@ -42,8 +42,8 @@ def main():
 
     # SET-UP Headphones
     device_name = 'sysdefault'
-    control_name = 'Headphone'
-    cardindex = 1
+    control_name = 'Headphone+LO'
+    cardindex = 0
 
     wav_fn = os.path.join(os.path.expanduser('~/Desktop'), 'Pilot_1.wav')
 
@@ -78,13 +78,15 @@ def main():
         # Update the FBCSP and LDA on eeg of the subject (subject specific)
 
         # Receive the eeg used for training
-        print("Concentrate on the left speaker first")
-        time.sleep(4)
-
+        print("Concentrate on the left speaker first", flush=True)
         eeg1, timestamps1 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
 
-        print("Concentrate on the right speaker now")
-        time.sleep(5)
+        print("Concentrate on the right speaker now", flush=True)
+        # Wasted eeg while subject directs attention
+        flag = True
+        while flag:
+            _, stamp = receive_eeg(EEG_inlet,1)
+            print(stamp, local_clock(), EEG_inlet.time_correction())
         eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
         timestamps = np.concatenate((timestamps1, timestamps2))
         eeg = np.concatenate((eeg1, eeg2), axis=1)

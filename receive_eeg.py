@@ -45,19 +45,17 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
         sample, timestamps = EEG_inlet.pull_sample()
         if first:
             clock = local_clock()
-            print("s",timestamps,"c",clock,"off", EEG_inlet.time_correction())
             first = False
-            print((timestamps+EEG_inlet.time_correction())-clock)
             
+        if timestamps:
+            # Add sample to the array if the samples is new
+            if lastSample != sample:
+                eeg = np.roll(eeg, -1, axis=0)
+                eeg = np.append(eeg[:-1], [sample], axis=0)
 
-        # Add sample to the array if the samples is new
-        if lastSample != sample:
-            eeg = np.roll(eeg, -1, axis=0)
-            eeg = np.append(eeg[:-1], [sample], axis=0)
+                shift(stamps, -1, cval=timestamps)
 
-            shift(stamps, -1, cval=timestamps)
-
-            i += 1
+                i += 1
 
         # If enough samples are added, eeg and markers are returned
         if i == (timeframe - overlap):
@@ -67,7 +65,6 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
             means =np.transpose(means)
             eeg[:,:] = eeg[:,:] - means
             eeg[:,:] = eeg[:,:]/np.linalg.norm(eeg[:,:])*eeg.shape[1]
-            print(eeg)
             break
 
     return np.transpose(eeg), stamps
