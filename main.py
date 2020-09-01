@@ -87,7 +87,8 @@ def main():
         flag = True
         while flag:
             _, stamp = receive_eeg(EEG_inlet,1)
-            print(stamp, local_clock(), EEG_inlet.time_correction())
+            print((stamp[0]+EEG_inlet.time_correction())-local_clock())
+
         eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
         timestamps = np.concatenate((timestamps1, timestamps2))
         eeg = np.concatenate((eeg1, eeg2), axis=1)

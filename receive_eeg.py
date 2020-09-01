@@ -49,7 +49,7 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
             if lastSample != sample:
                 eeg = np.roll(eeg, -1, axis=0)
                 eeg = np.append(eeg[:-1], [sample], axis=0)
-                
+
                 stamps[i] = timestamps
                 print(stamps)
 
