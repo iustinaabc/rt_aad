@@ -59,7 +59,6 @@ def classifier(eeg, CSP, coef, b):
     """ Feature vector """
     feat = np.log(np.var(Y, axis=1))
     # shape should be 6xtime
-    print(feat,coef, b)
     """ Prediction """
     leftOrRight = np.sign(np.matmul(feat, coef) + b)
 

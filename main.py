@@ -115,7 +115,6 @@ def main():
         eeg = np.array(eeg)
         # Classify eeg chunk into left or right attended speaker using CSP filters
         print("---Classifying---")
-        print(eeg.shape)
         previousLeftOrRight = leftOrRight
         leftOrRight = classifier(eeg, CSP, coef, b)
         print("left" if leftOrRight == 1. else "right")
@@ -126,20 +125,18 @@ def main():
         # Validation: previous decision is the same as this one
         print(lr_bal.get_volume(), previousLeftOrRight, leftOrRight)
 
-        if all(np.array(lr_bal.get_volume()) > volumeThreshold) and previousLeftOrRight == leftOrRight:
-            print("---Controlling volume---")
-            if leftOrRight == -1.:
-                print("Left Increase")
-                for i in range(3):
-                    lr_bal.fade_right(LRBalancer.OUT, 5)
-                    lr_bal.fade_left(LRBalancer.IN, 5)
-                    time.sleep(5)
-            elif leftOrRight == 1.:
-                print("Right increase")
-                for i in range(3):
-                    lr_bal.fade_left(LRBalancer.OUT, 5)
-                    lr_bal.fade_right(LRBalancer.IN, 5)
-                    time.sleep(5)
+        # if all(np.array(lr_bal.get_volume()) > volumeThreshold) and previousLeftOrRight == leftOrRight:
+        #     print("---Controlling volume---")
+        #     if leftOrRight == -1.:
+        #         print("Left Increase")
+        #         for i in range(3):
+        #             lr_bal.fade_right(LRBalancer.OUT)
+        #             lr_bal.fade_left(LRBalancer.IN)
+        #     elif leftOrRight == 1.:
+        #         print("Right increase")
+        #         for i in range(3):
+        #             lr_bal.fade_left(LRBalancer.OUT)
+        #             lr_bal.fade_right(LRBalancer.IN)
 
 
 if __name__ == '__main__':
