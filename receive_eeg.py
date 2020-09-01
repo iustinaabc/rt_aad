@@ -44,7 +44,7 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
         lastSample = sample
         sample, timestamps = EEG_inlet.pull_sample()
 
-        while starttime and (timestamps[0]+EEG_inlet.time_correction()-starttime < 0):
+        while starttime and (timestamps+EEG_inlet.time_correction()-starttime < 0):
             pass
             
         if timestamps:
