@@ -16,7 +16,7 @@ def main():
     # Parameters
     samplingFrequency = 250 # Hz
     channels = 24 # Channels on the EEG cap
-    timeframe = 100  # in samples (timeframe / samplingFrequency = time in seconds)
+    timeframe = 750  # in samples (timeframe / samplingFrequency = time in seconds)
     overlap = 30  # in samples
     datatype = np.float32
     volumeThreshold = 50  # in percent

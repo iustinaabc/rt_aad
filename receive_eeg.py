@@ -38,7 +38,7 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
     sample = None
     i = 0
 
-    
+
 
     # Check till right sample is available
     sample, timestamps = EEG_inlet.pull_sample()
@@ -66,11 +66,11 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
         # If enough samples are added, eeg and markers are returned
         if i == (timeframe - overlap):
             # Normalization
-            mean = np.average(eeg[:,:],1)
-            means= np.full((eeg.shape[1],eeg.shape[0]),mean)
-            means =np.transpose(means)
-            eeg[:,:] = eeg[:,:] - means
-            eeg[:,:] = eeg[:,:]/np.linalg.norm(eeg[:,:])*eeg.shape[1]
+            eeg = eeg.T
+            mean = np.average(eeg, axis=1)[:, np.newaxis]
+            eeg = eeg - mean
+            eeg = eeg #"/np.linalg.norm(eeg)*eeg.shape[1]
+            eeg = eeg.T
             break
 
     return np.transpose(eeg), stamps
