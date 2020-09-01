@@ -40,6 +40,15 @@ def main():
     leftOrRight = None
     eeg = None
 
+    # SET-UP LSL Streams
+    # resolve an EEG stream on the lab network
+    print("looking for an EEG stream... ")
+    streams = resolve_stream('type', 'EEG')
+    print("[STREAM FOUND]")
+
+    # create a new inlet to read from the stream
+    EEG_inlet = StreamInlet(streams[0])
+
     # SET-UP Headphones
     device_name = 'sysdefault'
     control_name = 'Headphone+LO'
@@ -58,15 +67,6 @@ def main():
     
     lr_bal.set_volume_left(100)
     lr_bal.set_volume_right(100)
-
-    # SET-UP LSL Streams
-    # resolve an EEG stream on the lab network
-    print("looking for an EEG stream... ")
-    streams = resolve_stream('type', 'EEG')
-    print("[STREAM FOUND]")
-
-    # create a new inlet to read from the stream
-    EEG_inlet = StreamInlet(streams[0])
 
     """ TRAINING OF THE FBCSP AND THE LDA SUBJECT INDEPENDENT OR SUBJECT SPECIFIC """
     print("--- Training filters and LDA... ---")
