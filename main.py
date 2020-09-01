@@ -80,16 +80,19 @@ def main():
 
         # Receive the eeg used for training
         print("Concentrate on the left speaker first", flush=True)
-        eeg1, timestamps1 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
+        startleft = local_clock()
+        eeg1, timestamps1 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels, starttime=startleft+3)
 
         print("Concentrate on the right speaker now", flush=True)
+        startright = local_clock()
+
         # Wasted eeg while subject directs attention
         flag = True
         while flag:
             _, stamp = receive_eeg(EEG_inlet,1)
-            print((stamp[0]+EEG_inlet.time_correction())-local_clock())
+            print((stamp[0]+EEG_inlet.time_correction())-)
 
-        eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
+        eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels, starttime=startright+3)
         timestamps = np.concatenate((timestamps1, timestamps2))
         eeg = np.concatenate((eeg1, eeg2), axis=1)
         print(eeg.shape)
