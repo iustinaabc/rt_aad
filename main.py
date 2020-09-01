@@ -51,6 +51,7 @@ def main():
 
     ap.set_device(device_name, cardindex)
     ap.init_play(wav_fn)
+    ap.play()
 
     lr_bal = LRBalancer()
     lr_bal.set_control(control_name, device_name, cardindex)
