@@ -53,7 +53,7 @@ class AudioPlayer:
         """
         self._device = alsaaudio.PCM(type=alsaaudio.PCM_PLAYBACK,
                                      device=device_name,
-                                     cardindex)
+                                     cardindex=cardindex)
 
 
     def init_play(self, wav_fn):
@@ -281,6 +281,7 @@ def main():
     # playback parameters (tested on Ubuntu 16.04 with Intel HDA audio card)
     device_name = 'sysdefault'
     control_name = 'Headphone'
+    cardindex = 1
     wav_fn = os.path.join(os.path.expanduser('~/Desktop'),
                           'Pilot_1.wav')
 

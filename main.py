@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
+import os
 import numpy as np
 import time
 import math
-# from audio import LRBalancer
+from audio import LRBalancer, AudioPlayer
 from classifier import classifier
 from receive_eeg import receive_eeg
 from trainFilters import trainFilters
@@ -23,7 +24,8 @@ def main():
     updateCSP = True  # Using subject specific CSP filters
     updatecov = True  # Using subject specific covariance matrix
     updatebias = True  # Using subject specific bias
-    timeframeTraining = 400  # in samples of each trial with a specific class
+    timeframeTraining = 768  # in samples of each trial with a specific class
+    windowLengthTraining = 2  # timeframe for training is split into windows of windowlength * fs for lda calculation
     # trainingTrials = 1  # parts of the EEG recording. Each trial has a specific speaker class.All classes should be balanced
     stimulusReconstruction = False  # Use of stimulus reconstruction
     markers = np.array([1,2]) # First Left, then Right for training
@@ -39,9 +41,9 @@ def main():
     eeg = None
 
     # SET-UP Headphones
-    # device_name = 'sysdefault'
-    # control_name = 'Headphone'
-    # cardindex = 1
+    device_name = 'sysdefault'
+    control_name = 'Headphone'
+    cardindex = 1
 
     wav_fn = os.path.join(os.path.expanduser('~/Desktop'), 'Pilot_1.wav')
 
@@ -50,11 +52,11 @@ def main():
     ap.set_device(device_name, cardindex)
     ap.init_play(wav_fn)
 
-    # lr_bal = LRBalancer()
-    # lr_bal.set_control(control_name, device_name, cardindex)
-    #
-    # lr_bal.set_volume_left(100)
-    # lr_bal.set_volume_right(100)
+    lr_bal = LRBalancer()
+    lr_bal.set_control(control_name, device_name, cardindex)
+    
+    lr_bal.set_volume_left(100)
+    lr_bal.set_volume_right(100)
 
     # SET-UP LSL Streams
     # resolve an EEG stream on the lab network
@@ -79,17 +81,18 @@ def main():
         print("Concentrate on the left speaker first")
         time.sleep(4)
 
-        eeg, timestamps1 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
-        time.sleep(5)
+        eeg1, timestamps1 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
 
         print("Concentrate on the right speaker now")
-        time.sleep(4)
-        eeg, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining*2, datatype=datatype, eeg=eeg, channels=channels)
+        time.sleep(5)
+        eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
         timestamps = np.concatenate((timestamps1, timestamps2))
+        eeg = np.concatenate((eeg1, eeg2), axis=1)
+        print(eeg.shape)
 
         trialSize = math.floor(timeframeTraining)
-        CSPSS, coefSS, bSS = trainFilters(usingDataset=False, eeg=eeg, markers=markers, trialSize=trialSize, fs=samplingFrequency)
-
+        CSPSS, coefSS, bSS = trainFilters(usingDataset=False, eeg=eeg, markers=markers, trialSize=trialSize, fs=samplingFrequency, windowLength=windowLengthTraining)
+        print(coefSS)
         """ CSP training """
         if updateCSP:
             CSP = CSPSS
@@ -109,6 +112,7 @@ def main():
         eeg = np.array(eeg)
         # Classify eeg chunk into left or right attended speaker using CSP filters
         print("---Classifying---")
+        print(eeg.shape)
         previousLeftOrRight = leftOrRight
         leftOrRight = classifier(eeg, CSP, coef, b)
         print("left" if leftOrRight == 1. else "right")
@@ -117,21 +121,22 @@ def main():
 
         # Faded gain control towards left or right, stops when one channel falls below the volume threshold
         # Validation: previous decision is the same as this one
+        print(lr_bal.get_volume(), previousLeftOrRight, leftOrRight)
 
-        # if all(np.array(lr_bal.get_volume()) > volumeThreshold) and previousLeftOrRight == leftOrRight:
-        #     print("---Controlling volume---")
-        #     if leftOrRight == -1.:
-        #         print("Left Increase")
-        #         for i in range(3):
-        #             lr_bal.fade_right(LRBalancer.OUT, 5)
-        #             lr_bal.fade_left(LRBalancer.IN, 5)
-        #             time.sleep(5)
-        #     elif leftOrRight == 1.:
-        #         print("Right increase")
-        #         for i in range(3):
-        #             lr_bal.fade_left(LRBalancer.OUT, 5)
-        #             lr_bal.fade_right(LRBalancer.IN, 5)
-        #             time.sleep(5)
+        if all(np.array(lr_bal.get_volume()) > volumeThreshold) and previousLeftOrRight == leftOrRight:
+            print("---Controlling volume---")
+            if leftOrRight == -1.:
+                print("Left Increase")
+                for i in range(3):
+                    lr_bal.fade_right(LRBalancer.OUT, 5)
+                    lr_bal.fade_left(LRBalancer.IN, 5)
+                    time.sleep(5)
+            elif leftOrRight == 1.:
+                print("Right increase")
+                for i in range(3):
+                    lr_bal.fade_left(LRBalancer.OUT, 5)
+                    lr_bal.fade_right(LRBalancer.IN, 5)
+                    time.sleep(5)
 
 
 if __name__ == '__main__':

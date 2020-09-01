@@ -27,8 +27,7 @@ def classifier(eeg, CSP, coef, b):
     filterbankBands = np.array([[14], [26]])
 
     # Sampling frequency
-    fs = 64  # Hz
-
+    fs = 64  # Hz    
 
     """ Apply filterbank to incoming eeg """
     eegTemp = eeg
@@ -60,7 +59,7 @@ def classifier(eeg, CSP, coef, b):
     """ Feature vector """
     feat = np.log(np.var(Y, axis=1))
     # shape should be 6xtime
-
+    print(feat,coef, b)
     """ Prediction """
     leftOrRight = np.sign(np.matmul(feat, coef) + b)
 

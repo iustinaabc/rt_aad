@@ -29,21 +29,14 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
     # Initialize variables
     if eeg is None:
         eeg = np.zeros((timeframe, channels), dtype=datatype)
-        stamps = np.zeros((timeframe),dtype=datatype)
     else:
         # eeg samples are added in the time dimension
         eeg = np.transpose(eeg)
 
-    # if trials is not None:  # For Training
-    #     markers = np.array([0 in range(trials)], dtype=int)
-    # else:
-    #     markers = None
-
-    # if stamps is not None:  # For Synchronization
-    #     # TODO: Fix array (length)
-    #     markers = np.array([0 in range(trials)], dtype=datatype)
-    # sample = None
-    # i = 0
+    if stamps is None:  # For Synchronization
+        stamps = np.zeros((timeframe),dtype=datatype)
+    sample = None
+    i = 0
 
     # Pull in until full
     first = True
@@ -53,32 +46,30 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
         if first:
             clock = local_clock()
             print("s",timestamps,"c",clock,"off", EEG_inlet.time_correction())
+            first = False
+            print((timestamps+EEG_inlet.time_correction())-clock)
+            
 
         # Add sample to the array if the samples is new
         if lastSample != sample:
-            # shift(eeg, -1, cval=sample)
             eeg = np.roll(eeg, -1, axis=0)
             eeg = np.append(eeg[:-1], [sample], axis=0)
+
             shift(stamps, -1, cval=timestamps)
-
-            # # Every new trial the class is reported in the markers array (+timeframe/(2*trials) samples to make sure
-            # # the right marker is reported)
-            # if marker_inlet is not None and i in [i*math.ceil(timeframe/trials)+timeframe/(2*trials) for i in range(trials)]:
-            #     shift(markers, -1, cval=mark)
-
-            # TODO: Stamps array for synchronization to be filled
 
             i += 1
 
         # If enough samples are added, eeg and markers are returned
         if i == (timeframe - overlap):
+            # Normalization
+            mean = np.average(eeg[:,:],1)
+            means= np.full((eeg.shape[1],eeg.shape[0]),mean)
+            means =np.transpose(means)
+            eeg[:,:] = eeg[:,:] - means
+            eeg[:,:] = eeg[:,:]/np.linalg.norm(eeg[:,:])*eeg.shape[1]
+            print(eeg)
             break
 
     return np.transpose(eeg), stamps
 
 
-if __name__ == '__main__':
-    lst = np.array([[2, 3, 4, 5], [1, 2, 3, 4], [4, 5, 6, 7]])
-    print(np.append(lst[:-1], [[3, 4, 5, 6]],axis=0))
-    filterbankBands = np.array([[14], [26]])
-    print(len(filterbankBands[0]))

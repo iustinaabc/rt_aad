@@ -34,7 +34,8 @@ def trainCSP(X, y, npat, optmode, covMethod):
     indices2 = np.where(y == yc[1])
 
     X1 = X[:, :, indices1[0]]
-    X2 = np.squeeze(X[:, :, indices2[0]])
+    X2 = X[:, :, indices2[0]]
+    
     Xm1 = np.reshape(X1, (X1.shape[0], X1.shape[1] * X1.shape[2]))
     Xm2 = np.reshape(X2, (X2.shape[0], X2.shape[1] * X2.shape[2]))
 
@@ -62,10 +63,8 @@ def trainCSP(X, y, npat, optmode, covMethod):
         if True:
             Y1 = tmprod(X1, np.transpose(W))
             Y2 = tmprod(X2, np.transpose(W))
-            Y1 = Y1.astype(np.float32)
-            Y2 = Y2.astype(np.float32)
-            Y1 = np.squeeze(np.var(Y1, axis=1))
-            Y2 = np.squeeze(np.var(Y2, axis=1))
+            Y1 = np.var(Y1, axis=1)
+            Y2 = np.var(Y2, axis=1)
             score = np.median(Y1, axis=1) / (np.median(Y1, axis=1) + np.median(Y2, axis=1))
         else:
             score = labda
