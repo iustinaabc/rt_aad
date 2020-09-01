@@ -14,7 +14,7 @@ from eeg_emulation import emulate
 
 def main():
     # Parameters
-    samplingFrequency = 64 # Hz
+    samplingFrequency = 250 # Hz
     channels = 24 # Channels on the EEG cap
     timeframe = 100  # in samples (timeframe / samplingFrequency = time in seconds)
     overlap = 30  # in samples
@@ -24,7 +24,7 @@ def main():
     updateCSP = True  # Using subject specific CSP filters
     updatecov = True  # Using subject specific covariance matrix
     updatebias = True  # Using subject specific bias
-    timeframeTraining = 768  # in samples of each trial with a specific class
+    timeframeTraining = 30*samplingFrequency  # in samples of each trial with a specific class
     windowLengthTraining = 2  # timeframe for training is split into windows of windowlength * fs for lda calculation
     # trainingTrials = 1  # parts of the EEG recording. Each trial has a specific speaker class.All classes should be balanced
     stimulusReconstruction = False  # Use of stimulus reconstruction
@@ -86,11 +86,9 @@ def main():
         print("Concentrate on the right speaker now", flush=True)
         startright = local_clock()
 
-        # Wasted eeg while subject directs attention
-        flag = True
-        while flag:
-            _, stamp = receive_eeg(EEG_inlet,1)
-            print((stamp[0]+EEG_inlet.time_correction())-)
+        # while flag:
+        #     _, stamp = receive_eeg(EEG_inlet,1)
+        #     print((stamp[0]+EEG_inlet.time_correction())-)
 
         eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels, starttime=startright+3)
         timestamps = np.concatenate((timestamps1, timestamps2))
