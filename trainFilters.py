@@ -50,7 +50,7 @@ def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, 
     """ SETUP: parameters """
 
     params = {
-        "windowLengths": 5  # different lengths decision windows to test (in seconds)
+        "windowLengths": 5,  # different lengths decision windows to test (in seconds)
         "saveName": "temp",  # name to save results with
         # "conditions": ["-5/5", "quiet"],
         "conditions": ["all"],
