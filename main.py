@@ -93,11 +93,9 @@ def main():
         eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels, starttime=startright+3)
         timestamps = np.concatenate((timestamps1, timestamps2))
         eeg = np.concatenate((eeg1, eeg2), axis=1)
-        print(eeg.shape)
 
         trialSize = math.floor(timeframeTraining)
         CSPSS, coefSS, bSS = trainFilters(usingDataset=False, eeg=eeg, markers=markers, trialSize=trialSize, fs=samplingFrequency, windowLength=windowLengthTraining)
-        print(coefSS)
         """ CSP training """
         if updateCSP:
             CSP = CSPSS

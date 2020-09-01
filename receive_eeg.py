@@ -45,6 +45,7 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
         sample, timestamps = EEG_inlet.pull_sample()
 
         while starttime and (timestamps+EEG_inlet.time_correction()-starttime < 0):
+            print(timestamps+EEG_inlet.time_correction()-starttime)
             pass
             
         if timestamps:
@@ -54,7 +55,6 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
                 eeg = np.append(eeg[:-1], [sample], axis=0)
 
                 stamps[i] = timestamps
-                print(stamps)
 
                 i += 1
 
