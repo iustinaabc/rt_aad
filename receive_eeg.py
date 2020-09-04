@@ -72,9 +72,9 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
             eeg = eeg #/np.linalg.norm(eeg)*eeg.shape[1]
             eeg = eeg.T
             
-            eegfinal[timeframe-normframe:,:] = eeg
+            eegfinal[timeframe-normframe:, :] = eeg
             break
-        if i in list(range(0,timeframe, normframe)):
+        if i in list(range(0, timeframe, normframe)):
             eeg = eeg.T
             mean = np.average(eeg, axis=1)[:, np.newaxis]
             eeg = eeg - mean
@@ -85,7 +85,6 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
             
 
     print("test; should be equal to 1 or -1", stamps[0] - stamps[249])
-    print(eegfinal.shape)
     return eeg.T, stamps
 
 
