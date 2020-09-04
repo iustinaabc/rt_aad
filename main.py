@@ -19,13 +19,13 @@ def main():
     channels = 24  # Channels on the EEG cap
 
     timeframe = 750  # in samples (timeframe / samplingFrequency = time in seconds)
-    overlap = 30  # in samples
+    overlap = 0  # in samples
 
     trainingDataset = "das-2016"
     updateCSP = True  # Using subject specific CSP filters
     updatecov = True  # Using subject specific covariance matrix
     updatebias = True  # Using subject specific bias
-    timeframeTraining = 120*samplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
+    timeframeTraining = 300*samplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
     windowLengthTraining = 2  # timeframe for training is split into windows of windowlength * fs for lda calculation
     markers = np.array([1, 2])  # First Left, then Right for training
 
@@ -36,44 +36,44 @@ def main():
     volRight = 100  # Starting volume in percentage
 
     """ SET-UP Emulator """
-    # eeg_emulator = multiprocessing.Process(target=emulate)
-    # eeg_emulator.daemon = True
-    # time.sleep(5)
-    # eeg_emulator.start()
+#    eeg_emulator = multiprocessing.Process(target=emulate)
+#    eeg_emulator.daemon = True
+#    time.sleep(5)
+#    eeg_emulator.start()
 
     """ SET-UP Initialize variables """
     leftOrRight = None
     eeg = None
-
-    """ SET-UP LSL Streams """
-    # resolve an EEG stream on the lab network
-    print("looking for an EEG stream... ")
-    streams = resolve_stream('type', 'EEG')
-    print("[STREAM FOUND]")
-
-    # create a new inlet to read from the stream
-    EEG_inlet = StreamInlet(streams[0])
-
-    """ SET-UP Headphones """
-    device_name = 'sysdefault'
-    control_name = 'Headphone+LO'
-    cardindex = 0
-
-    wav_fn = os.path.join(os.path.expanduser('~/Desktop'), 'Pilot_1.wav')
-
-    # Playback
-    ap = AudioPlayer()
-
-    ap.set_device(device_name, cardindex)
-    ap.init_play(wav_fn)
-    ap.play()
-
-    # Audio Control
-    lr_bal = LRBalancer()
-    lr_bal.set_control(control_name, device_name, cardindex)
-
-    lr_bal.set_volume_left(volLeft)
-    lr_bal.set_volume_right(volRight)
+#
+#    """ SET-UP LSL Streams """
+#    # resolve an EEG stream on the lab network
+#    print("looking for an EEG stream... ")
+#    streams = resolve_stream('type', 'EEG')
+#    print("[STREAM FOUND]")
+#
+#    # create a new inlet to read from the stream
+#    EEG_inlet = StreamInlet(streams[0])
+#
+#    """ SET-UP Headphones """
+#    device_name = 'sysdefault'
+#    control_name = 'Headphone+LO'
+#    cardindex = 0
+#
+#    wav_fn = os.path.join(os.path.expanduser('~/Desktop'), 'Pilot_1.wav')
+#
+#    # Playback
+#    ap = AudioPlayer()
+#
+#    ap.set_device(device_name, cardindex)
+#    ap.init_play(wav_fn)
+#    ap.play()
+#
+#    # Audio Control
+#    lr_bal = LRBalancer()
+#    lr_bal.set_control(control_name, device_name, cardindex)
+#
+#    lr_bal.set_volume_left(volLeft)
+#    lr_bal.set_volume_right(volRight)
 
     """ TRAINING OF THE FBCSP AND THE LDA SUBJECT INDEPENDENT OR SUBJECT SPECIFIC """
     print("--- Training filters and LDA... ---")
@@ -87,11 +87,39 @@ def main():
         """ Receive the eeg used for training """
         print("Concentrate on the left speaker first", flush=True)
         startleft = local_clock()
-        eeg1, timestamps1 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels, starttime=startleft+3)
+#        eeg1, timestamps1 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels, starttime=startleft+3, normframe=timeframe)
+#        ap.stop()
+        
+#        np.save('/home/rtaad/Desktop/test_eeg5min', eeg1)
+#        ap = AudioPlayer()
+#
+#        ap.set_device(device_name, cardindex)
+#        ap.init_play(wav_fn)
+#        ap.play()
 
         # Load in previous data of own subject
-        # eeg1 = np.load('C:\\Users\\Xander\\Documents\\Project\\eeg_left.npy')
-        # eeg2 = np.load('C:\\Users\\Xander\\Documents\\Project\\eeg_right.npy')
+        eeg1 = np.load('/home/rtaad/Desktop/left_eeg2.npy')
+        eeg2 = np.load('/home/rtaad/Desktop/right_eeg2.npy')
+        print(eeg1.shape)
+
+#        for i in range(math.ceil(timeframeTraining/timeframe)):
+#            temp = eeg1[:,i*timeframe:(i+1)*timeframe]
+#            temp = temp.T
+#            mean = np.average(temp, axis=1)[:, np.newaxis]
+#            temp = temp - mean
+#            
+#            temp = temp/np.std(temp, axis=1)[:,np.newaxis]
+#            temp = temp.T
+#            eeg1[:,i*timeframe:(i+1)*timeframe] = temp
+#        for i in range(math.ceil(timeframeTraining/timeframe)):
+#            temp = eeg2[:,i*timeframe:(i+1)*timeframe]
+#            temp = temp.T
+#            mean = np.average(temp, axis=1)[:, np.newaxis]
+#            temp = temp - mean
+#            temp = temp/np.std(temp, axis=1)[:,np.newaxis]
+#            temp = temp.T
+#            eeg2[:,i*timeframe:(i+1)*timeframe] = temp
+        
 
         print("Concentrate on the right speaker now", flush=True)
         startright = local_clock()
@@ -105,8 +133,11 @@ def main():
         # eeg2 = eeg2 - mean
         # eeg2 = eeg2 / np.linalg.norm(eeg2) * eeg2.shape[1]
 
-        eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels, starttime=startright+3)
+#        eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels, starttime=startright+3, normframe=timeframe)
         eeg = np.concatenate((eeg1, eeg2), axis=1)
+        
+#        np.save('/home/rtaad/Desktop/left_eeg_no_norm', eeg1)
+#        np.save('/home/rtaad/Desktop/right_eeg_no_norm', eeg2)        
 
         # Size of each of the two trials
         trialSize = math.floor(timeframeTraining)
@@ -123,51 +154,55 @@ def main():
             coef = coefSS
         if updatebias:
             b = bSS
+            print(b)
+            print(coef)
 
-        # print(classifier(eeg1[:, :15000], CSP, coef, b, fs=samplingFrequency))
-        # print(classifier(eeg1[:, 15000:], CSP, coef, b, fs=samplingFrequency))
-        # print(classifier(eeg2[:, :15000], CSP, coef, b, fs=samplingFrequency))
-        # print(classifier(eeg2[:, 15000:], CSP, coef, b, fs=samplingFrequency))
+        print(classifier(eeg1[:, :15000], CSP, coef, b, fs=samplingFrequency))
+        print(classifier(eeg1[:, 15000:], CSP, coef, b, fs=samplingFrequency))
+        print(classifier(eeg2[:, :15000], CSP, coef, b, fs=samplingFrequency))
+        print(classifier(eeg2[:, 15000:], CSP, coef, b, fs=samplingFrequency))
 
         # Save the recorded EEG
-        # np.save('/home/rtaad/Desktop/left_eeg', eeg1)
-        # np.save('/home/rtaad/Desktop/right_eeg', eeg2)
+#        np.save('/home/rtaad/Desktop/CSP2', CSP)
+#        np.save('/home/rtaad/Desktop/coef2', coef)
+#        np.save('/home/rtaad/Desktop/b2', b)
 
-    """ System Loop """
-    print('---Starting the system---')
-    while True:
-        # Receive EEG from LSL
-        print("---Receiving EEG---")
-        eeg, unused = receive_eeg(EEG_inlet, timeframe, datatype=datatype, overlap=overlap, eeg=eeg, channels=channels)
-        eeg = np.array(eeg)
-        # Classify eeg chunk into left or right attended speaker using CSP filters
-        print("---Classifying---")
-        previousLeftOrRight = leftOrRight
-        leftOrRight = classifier(eeg, CSP, coef, b, fs=samplingFrequency)
-        print("left" if leftOrRight == -1. else "right")
-
-        # Classify eeg chunk into left or right attended speaker using stimulus reconstruction
-
-        # Faded gain control towards left or right, stops when one channel falls below the volume threshold
-        # Validation: previous decision is the same as this one
-        print(lr_bal.get_volume())
-        if all(np.array(lr_bal.get_volume()) > volumeThreshold) and previousLeftOrRight == leftOrRight:
-            print("---Controlling volume---")
-            if leftOrRight == -1.:
-                if volLeft != 100:
-                    lr_bal.set_volume_left(100)
-                    volLeft = 100
-                print("Right Decrease")
-                volRight = volRight - 5
-                lr_bal.set_volume_right(volRight)
-
-            elif leftOrRight == 1.:
-                if volRight != 100:
-                    lr_bal.set_volume_right(100)
-                    volRight = 100
-                print("Left Decrease")
-                volLeft = volLeft - 5
-                lr_bal.set_volume_left(volLeft)
-
+#    eeg = None
+#    """ System Loop """
+#    print('---Starting the system---')
+#    while True:
+#        # Receive EEG from LSL
+#        print("---Receiving EEG---")
+#        eeg, unused = receive_eeg(EEG_inlet, timeframe, datatype=datatype, overlap=overlap, eeg=eeg, channels=channels, normframe=timeframe)
+#        eeg = np.array(eeg)
+#        # Classify eeg chunk into left or right attended speaker using CSP filters
+#        print("---Classifying---")
+#        previousLeftOrRight = leftOrRight
+#        leftOrRight = classifier(eeg, CSP, coef, b, fs=samplingFrequency)
+#        print("left" if leftOrRight == -1. else "right")
+#
+#        # Classify eeg chunk into left or right attended speaker using stimulus reconstruction
+#
+#        # Faded gain control towards left or right, stops when one channel falls below the volume threshold
+#        # Validation: previous decision is the same as this one
+#        print(lr_bal.get_volume())
+#        if all(np.array(lr_bal.get_volume()) > volumeThreshold) and previousLeftOrRight == leftOrRight:
+#            print("---Controlling volume---")
+#            if leftOrRight == -1.:
+#                if volLeft != 100:
+#                    lr_bal.set_volume_left(100)
+#                    volLeft = 100
+#                print("Right Decrease")
+#                volRight = volRight - 5
+#                lr_bal.set_volume_right(volRight)
+#
+#            elif leftOrRight == 1.:
+#                if volRight != 100:
+#                    lr_bal.set_volume_right(100)
+#                    volRight = 100
+#                print("Left Decrease")
+#                volLeft = volLeft - 5
+#                lr_bal.set_volume_left(volLeft)
+#
 if __name__ == '__main__':
     main()

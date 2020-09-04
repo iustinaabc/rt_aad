@@ -7,6 +7,7 @@ Created on Thu Jun  4 09:50:40 2020
 """
 
 import time
+import numpy as np
 from random import random as rand
 
 from pylsl import StreamInfo, StreamOutlet
@@ -18,16 +19,20 @@ def emulate():
     # last value would be the serial number of the device or some other more or
     # less locally unique identifier for the stream as far as available (you
     # could also omit it but interrupted connections wouldn't auto-recover)
-    info = StreamInfo('BioSemi', 'EEG', 64, 100, 'float32', 'myuid34234')
-
+    info = StreamInfo('BioSemi', 'EEG', 24, 100, 'float32', 'myuid34234')
+    
+    i = 0
     # next make an outlet
     outlet = StreamOutlet(info)
+    eeg_left = np.load('/home/rtaad/Desktop/left_eeg1.npy')
+    eeg_right = np.load('/home/rtaad/Desktop/right_eeg1.npy')
 
     print("[EEG emulator sending data now]")
     while True:
         # make a new random 8-channel sample; this is converted into a
         # pylsl.vectorf (the data type that is expected by push_sample)
-        mysample = [rand() for i in range(64)]
+        mysample = eeg_left[:,i*750:(i+1)*750]
         # now send it and wait for a bit
         outlet.push_sample(mysample)
         time.sleep(0.01)
+        i += 1
