@@ -2,6 +2,7 @@
 
 import os
 import numpy as np
+import scipy
 import time
 import math
 from audio import LRBalancer, AudioPlayer
@@ -25,8 +26,8 @@ def main():
     updateCSP = True  # Using subject specific CSP filters
     updatecov = True  # Using subject specific covariance matrix
     updatebias = True  # Using subject specific bias
-    timeframeTraining = 300*samplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
-    windowLengthTraining = 2  # timeframe for training is split into windows of windowlength * fs for lda calculation
+    timeframeTraining = 180*samplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
+    windowLengthTraining = 10  # timeframe for training is split into windows of windowlength * fs for lda calculation
     markers = np.array([1, 2])  # First Left, then Right for training
 
     stimulusReconstruction = False  # Use of stimulus reconstruction
@@ -102,23 +103,16 @@ def main():
         eeg2 = np.load('/home/rtaad/Desktop/right_eeg2.npy')
         print(eeg1.shape)
 
-#        for i in range(math.ceil(timeframeTraining/timeframe)):
-#            temp = eeg1[:,i*timeframe:(i+1)*timeframe]
-#            temp = temp.T
-#            mean = np.average(temp, axis=1)[:, np.newaxis]
-#            temp = temp - mean
-#            
-#            temp = temp/np.std(temp, axis=1)[:,np.newaxis]
-#            temp = temp.T
-#            eeg1[:,i*timeframe:(i+1)*timeframe] = temp
-#        for i in range(math.ceil(timeframeTraining/timeframe)):
-#            temp = eeg2[:,i*timeframe:(i+1)*timeframe]
-#            temp = temp.T
-#            mean = np.average(temp, axis=1)[:, np.newaxis]
-#            temp = temp - mean
-#            temp = temp/np.std(temp, axis=1)[:,np.newaxis]
-#            temp = temp.T
-#            eeg2[:,i*timeframe:(i+1)*timeframe] = temp
+        for i in range(math.ceil(timeframeTraining/timeframe)):
+            temp = eeg1[:,i*timeframe:(i+1)*timeframe]
+            mean = np.average(temp, axis=1)[:, np.newaxis]
+            temp = temp - mean
+            eeg1[:,i*timeframe:(i+1)*timeframe] = temp
+        for i in range(math.ceil(timeframeTraining/timeframe)):
+            temp = eeg2[:,i*timeframe:(i+1)*timeframe]
+            mean = np.average(temp, axis=1)[:, np.newaxis]
+            temp = temp - mean
+            eeg2[:,i*timeframe:(i+1)*timeframe] = temp
         
 
         print("Concentrate on the right speaker now", flush=True)
@@ -134,15 +128,15 @@ def main():
         # eeg2 = eeg2 / np.linalg.norm(eeg2) * eeg2.shape[1]
 
 #        eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels, starttime=startright+3, normframe=timeframe)
-        eeg = np.concatenate((eeg1, eeg2), axis=1)
-        
+        eeg = np.concatenate((eeg1[:,15000:30000],eeg1[:,45000:],eeg2[:,15000:30000],eeg2[:,45000:]), axis=1)
+        print(eeg.shape)
 #        np.save('/home/rtaad/Desktop/left_eeg_no_norm', eeg1)
 #        np.save('/home/rtaad/Desktop/right_eeg_no_norm', eeg2)        
 
         # Size of each of the two trials
         trialSize = math.floor(timeframeTraining)
         # Train FBCSP and LDA
-        CSPSS, coefSS, bSS = trainFilters(usingDataset=False, eeg=eeg, markers=markers, trialSize=trialSize,
+        CSPSS, coefSS, bSS, feat = trainFilters(usingDataset=False, eeg=eeg, markers=markers, trialSize=trialSize,
                                           fs=samplingFrequency, windowLength=windowLengthTraining)
 
         """ CSP training """
@@ -156,30 +150,51 @@ def main():
             b = bSS
             print(b)
             print(coef)
-
-        print(classifier(eeg1[:, :15000], CSP, coef, b, fs=samplingFrequency))
-        print(classifier(eeg1[:, 15000:], CSP, coef, b, fs=samplingFrequency))
-        print(classifier(eeg2[:, :15000], CSP, coef, b, fs=samplingFrequency))
-        print(classifier(eeg2[:, 15000:], CSP, coef, b, fs=samplingFrequency))
+        
+#        for j in range(5):
+#
+#            print(classifier(eeg1[:, 15000*j:(j+1)*15000], CSP, coef, b, fs=samplingFrequency))
+#            print(classifier(eeg2[:, 15000*j:(j+1)*15000], CSP, coef, b, fs=samplingFrequency))
 
         # Save the recorded EEG
-#        np.save('/home/rtaad/Desktop/CSP2', CSP)
-#        np.save('/home/rtaad/Desktop/coef2', coef)
-#        np.save('/home/rtaad/Desktop/b2', b)
-
+        np.save('/home/rtaad/Desktop/CSP3', CSP)
+        np.save('/home/rtaad/Desktop/coef3', coef)
+        np.save('/home/rtaad/Desktop/b3', b)
+        np.save('/home/rtaad/Desktop/feat3', feat)
+        np.save('/home/rtaad/Desktop/eegtraining3', eeg)
 #    eeg = None
 #    """ System Loop """
 #    print('---Starting the system---')
 #    while True:
-#        # Receive EEG from LSL
-#        print("---Receiving EEG---")
+        # Receive EEG from LSL
+    print("---Receiving EEG---")
+    scoreleft = 0
+    scoreright = 0
+    testfeat = list()
 #        eeg, unused = receive_eeg(EEG_inlet, timeframe, datatype=datatype, overlap=overlap, eeg=eeg, channels=channels, normframe=timeframe)
-#        eeg = np.array(eeg)
-#        # Classify eeg chunk into left or right attended speaker using CSP filters
-#        print("---Classifying---")
-#        previousLeftOrRight = leftOrRight
-#        leftOrRight = classifier(eeg, CSP, coef, b, fs=samplingFrequency)
-#        print("left" if leftOrRight == -1. else "right")
+    for streamcount in range(20):            
+        eegtestleft = eeg1[:,30000+streamcount*750:30000+(streamcount+1)*750]
+        eegtestright = eeg2[:,30000+streamcount*750:30000+(streamcount+1)*750]
+        
+        print(eeg.shape)
+        # Classify eeg chunk into left or right attended speaker using CSP filters
+        print("---Classifying---")
+        previousLeftOrRight = leftOrRight
+        leftOrRight, feat = classifier(eegtestleft, CSP, coef, b, fs=samplingFrequency)
+        testfeat.append(feat)    
+        print(feat)    
+
+        print("left" if leftOrRight == -1. else "right")
+        if leftOrRight == -1.:
+            scoreleft += 1
+        leftOrRight, feat = classifier(eegtestright, CSP, coef, b, fs=samplingFrequency)
+        if leftOrRight == 1.:
+            scoreright += 1
+    print('left',scoreleft/20)
+    print('right',scoreright/20)
+    print(testfeat)
+    np.save('/home/rtaad/Desktop/testfeat3', testfeat)
+
 #
 #        # Classify eeg chunk into left or right attended speaker using stimulus reconstruction
 #

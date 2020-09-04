@@ -65,7 +65,7 @@ def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, 
 
         #FILTERBANK SETUP
         # "filterbankBands": np.array([[1,2:2:26],[4:2:30]]),  #first row: lower bound, second row: upper bound
-        "filterbankBands": np.array([[14],[26]]),
+        "filterbankBands": np.array([[12],[30]]),
 
         #COVARIANCE ESTIMATION
         "cov": {
@@ -203,6 +203,6 @@ def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, 
     b = np.squeeze(np.squeeze(b))
 
 
-    return CSP, coef, b
+    return CSP, coef, b, feat
 
 

@@ -24,7 +24,7 @@ def classifier(eeg, CSP, coef, b, fs=250):
 
     # Filterbank Set-Up
     # filterbankBands = np.array([[1,2:2:26],[4:2:30]]), #first row: lower bound, second row: upper bound
-    filterbankBands = np.array([[14], [26]])
+    filterbankBands = np.array([[12], [30]])
 
     """ Apply filterbank to incoming eeg """
     eegTemp = eeg
@@ -58,4 +58,4 @@ def classifier(eeg, CSP, coef, b, fs=250):
     print(np.matmul(feat, coef) + b)
     leftOrRight = np.sign(np.matmul(feat, coef) + b)
 
-    return leftOrRight
+    return leftOrRight, feat
