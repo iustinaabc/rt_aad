@@ -11,7 +11,7 @@ from segment import segment
 import random
 
 
-def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, trialSize=None, fs=64, windowLength=None):
+def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, trialSize=None, fs=250, windowLength=None):
     """
     Can be used both on a dataset to train Subject Independent filters and LDA as on Subject EEG recording to train
     Subject Specific filters and LDA
@@ -134,11 +134,8 @@ def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, 
             eeg[:, band, :] = np.transpose(scipy.signal.filtfilt(b, a, np.transpose(eegTemp, (1, 0)), axis=0),
                                               (1, 0))
             # eeg now has dimensions channels x time x trials
-            mean = np.average(eeg[:, band, :], 1)
-            means = np.full((eeg.shape[2], eeg.shape[0]), mean)
-            means = np.transpose(means, (1, 0))
-
-            eeg[:, band, :] = eeg[:, band, :] - means
+            mean = np.average(eeg[:, band, :], axis=1)[:, np.newaxis]
+            eeg[:, band, :] = eeg[:, band, :] - mean
         del eegTemp
 
         X = eeg
@@ -185,20 +182,24 @@ def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, 
         Y = Y[:, :, :, np.newaxis]
         CSP["W"] = CSP["W"][:, :, np.newaxis]
     Y = np.transpose(Y, (0, 3, 1, 2))
+    print(Y.shape)
 
     """CALCULATE THE COEFFICIENTS"""
     YtrainWindow = segment(Y, windowLength * fs)
+    print(YtrainWindow.shape)
     labelstrainWindow = np.repeat(labels, np.floor(trialLength / (windowLength * fs)))
     feat = np.log( np.var( YtrainWindow, axis=2 ) )
-    feat = np.transpose(np.reshape(feat, (feat.shape[0] * feat.shape[1],
-                                                            feat.shape[2])))
+    print(feat.shape)
+    feat = np.transpose(np.reshape(feat, (feat.shape[0] * feat.shape[1], feat.shape[2])))
 
     trainindices1 = np.where(labelstrainWindow == 1)
     trainindices2 = np.where(labelstrainWindow == 2)
     mu = np.transpose(np.array([np.average(feat[trainindices1[0], :], axis=0),
-                  np.average(feat[trainindices2[0], :], axis=0)]))
+              np.average(feat[trainindices2[0], :], axis=0)]))
+    print(mu, mu.shape)
 
     S = np.cov(np.transpose(feat))
+    print(S.shape)
     coef = np.linalg.solve(S, (np.subtract(mu[:, 1], mu[:, 0])))
     b = -np.matmul(np.transpose(coef[:, np.newaxis]), np.sum(mu, axis=1)[:, np.newaxis])*1/2
     b = np.squeeze(np.squeeze(b))

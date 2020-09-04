@@ -2,7 +2,7 @@ import numpy as np
 import scipy.signal
 
 
-def classifier(eeg, CSP, coef, b):
+def classifier(eeg, CSP, coef, b, fs=250):
     """
     Classifies the recorded EEG into the classes Left or Right, using the FBCSP filters and the LDA variables
 
@@ -26,9 +26,6 @@ def classifier(eeg, CSP, coef, b):
     # filterbankBands = np.array([[1,2:2:26],[4:2:30]]), #first row: lower bound, second row: upper bound
     filterbankBands = np.array([[14], [26]])
 
-    # Sampling frequency
-    fs = 64  # Hz    
-
     """ Apply filterbank to incoming eeg """
     eegTemp = eeg
     eeg = np.zeros((eeg.shape[0], len(filterbankBands[0]), eeg.shape[1]))
@@ -38,12 +35,9 @@ def classifier(eeg, CSP, coef, b):
 
         eeg[:, band, :] = np.transpose(scipy.signal.filtfilt(denominator, numerator, np.transpose(eegTemp, (1, 0)),
                                                              axis=0), (1, 0))
-        # eeg now has dimensions channels x time
-        mean = np.average(eeg[:, band, :], 1)
-        means = np.full((eeg.shape[2], eeg.shape[0]), mean)
-        means = np.transpose(means, (1, 0))
-
-        eeg[:, band, :] = eeg[:, band, :] - means
+        # # eeg now has dimensions channels x time
+        mean = np.average(eeg[:, band, :], axis=1)[:, np.newaxis]
+        eeg[:, band, :] = eeg[:, band, :] - mean
     del eegTemp
     X = eeg
 
@@ -56,10 +50,12 @@ def classifier(eeg, CSP, coef, b):
         else:
             Y = np.concatenate((Y, np.matmul(np.transpose(CSP["W"][:, :, band]), np.squeeze(X[:, band, :]))), axis=2)
 
+    print(Y.shape)
     """ Feature vector """
     feat = np.log(np.var(Y, axis=1))
     # shape should be 6xtime
     """ Prediction """
+    print(np.matmul(feat, coef) + b)
     leftOrRight = np.sign(np.matmul(feat, coef) + b)
 
     return leftOrRight

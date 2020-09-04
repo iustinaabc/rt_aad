@@ -1,5 +1,6 @@
 import numpy as np
 from tmprod import tmprod
+import scipy
 
 
 def trainCSP(X, y, npat, optmode, covMethod):
@@ -56,13 +57,17 @@ def trainCSP(X, y, npat, optmode, covMethod):
 
     # Optimize CSP filters
     if optmode == 'ratiotrace':
-        D, W = np.linalg.eig(np.matmul(S1, np.linalg.inv(S2)))
+        D, W = scipy.linalg.eig(S1, S2)
+        # D, W = np.linalg.eig(np.matmul(S1, np.linalg.inv(S2)))
         # D,W = np.linalg.eig(np.matmul(S1,S1+S2))
-        labda = np.diag(D)
+        labda = D
+        print(labda.shape)
 
         if True:
+            print(X1.shape, 'bam', W.shape)
             Y1 = tmprod(X1, np.transpose(W))
             Y2 = tmprod(X2, np.transpose(W))
+            print(Y2.shape)
             Y1 = np.var(Y1, axis=1)
             Y2 = np.var(Y2, axis=1)
             score = np.median(Y1, axis=1) / (np.median(Y1, axis=1) + np.median(Y2, axis=1))
@@ -71,7 +76,9 @@ def trainCSP(X, y, npat, optmode, covMethod):
 
         # sort according to median relation
         order = np.argsort(-score)
+        print(order)
         score = -np.sort(-score)
+        print(score)
         labda = labda[order]
         W = W[:, order]
 

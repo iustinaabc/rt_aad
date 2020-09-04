@@ -73,6 +73,7 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
             eeg = eeg.T
             break
 
+    print("test; should be equal to 1 or -1", stamps[0] - stamps[249])
     return np.transpose(eeg), stamps
 
 
