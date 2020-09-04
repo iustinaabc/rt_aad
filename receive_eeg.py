@@ -1,4 +1,3 @@
-from scipy.ndimage.interpolation import shift
 import numpy as np
 import math
 from pylsl import local_clock
@@ -35,7 +34,6 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
 
     if stamps is None:  # For Synchronization
         stamps = np.zeros((timeframe),dtype=datatype)
-    sample = None
     i = 0
 
 
@@ -48,7 +46,6 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
         pass
 
     # Pull in until full
-    first = True
     while True:
         lastSample = sample
         sample, timestamps = EEG_inlet.pull_sample()
@@ -69,7 +66,7 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
             eeg = eeg.T
             mean = np.average(eeg, axis=1)[:, np.newaxis]
             eeg = eeg - mean
-            eeg = eeg #"/np.linalg.norm(eeg)*eeg.shape[1]
+            eeg = eeg/np.linalg.norm(eeg)*eeg.shape[1]
             eeg = eeg.T
             break
 

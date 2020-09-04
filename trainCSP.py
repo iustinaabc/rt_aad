@@ -76,9 +76,7 @@ def trainCSP(X, y, npat, optmode, covMethod):
 
         # sort according to median relation
         order = np.argsort(-score)
-        print(order)
         score = -np.sort(-score)
-        print(score)
         labda = labda[order]
         W = W[:, order]
 

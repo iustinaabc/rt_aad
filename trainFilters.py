@@ -145,7 +145,6 @@ def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, 
         X = X[:, :, :, np.newaxis]
         X = segment(X, trialSize)
         trialLength = trialSize
-        print(X.shape)
 
 
     """TRAIN CSP FILTERS"""
@@ -182,7 +181,6 @@ def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, 
         Y = Y[:, :, :, np.newaxis]
         CSP["W"] = CSP["W"][:, :, np.newaxis]
     Y = np.transpose(Y, (0, 3, 1, 2))
-    print(Y.shape)
 
     """CALCULATE THE COEFFICIENTS"""
     YtrainWindow = segment(Y, windowLength * fs)
@@ -196,7 +194,7 @@ def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, 
     trainindices2 = np.where(labelstrainWindow == 2)
     mu = np.transpose(np.array([np.average(feat[trainindices1[0], :], axis=0),
               np.average(feat[trainindices2[0], :], axis=0)]))
-    print(mu, mu.shape)
+    print(mu.shape)
 
     S = np.cov(np.transpose(feat))
     print(S.shape)

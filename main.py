@@ -61,12 +61,14 @@ def main():
 
     wav_fn = os.path.join(os.path.expanduser('~/Desktop'), 'Pilot_1.wav')
 
+    # Playback
     ap = AudioPlayer()
 
     ap.set_device(device_name, cardindex)
     ap.init_play(wav_fn)
     ap.play()
 
+    # Audio Control
     lr_bal = LRBalancer()
     lr_bal.set_control(control_name, device_name, cardindex)
 
@@ -75,7 +77,6 @@ def main():
 
     """ TRAINING OF THE FBCSP AND THE LDA SUBJECT INDEPENDENT OR SUBJECT SPECIFIC """
     print("--- Training filters and LDA... ---")
-
     if False in [updateCSP,updatecov,updatebias]:
         # Train the CSP filters on dataset of other subjects (subject independent)
         CSP, coef, b = trainFilters(dataset=trainingDataset)
@@ -88,6 +89,7 @@ def main():
         startleft = local_clock()
         eeg1, timestamps1 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels, starttime=startleft+3)
 
+        # Load in previous data of own subject
         # eeg1 = np.load('C:\\Users\\Xander\\Documents\\Project\\eeg_left.npy')
         # eeg2 = np.load('C:\\Users\\Xander\\Documents\\Project\\eeg_right.npy')
 
@@ -103,15 +105,12 @@ def main():
         # eeg2 = eeg2 - mean
         # eeg2 = eeg2 / np.linalg.norm(eeg2) * eeg2.shape[1]
 
-        # while flag:
-        #     _, stamp = receive_eeg(EEG_inlet,1)
-        #     print((stamp[0]+EEG_inlet.time_correction())-)
-
         eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels, starttime=startright+3)
         eeg = np.concatenate((eeg1, eeg2), axis=1)
-        print(eeg.shape)
 
+        # Size of each of the two trials
         trialSize = math.floor(timeframeTraining)
+        # Train FBCSP and LDA
         CSPSS, coefSS, bSS = trainFilters(usingDataset=False, eeg=eeg, markers=markers, trialSize=trialSize,
                                           fs=samplingFrequency, windowLength=windowLengthTraining)
 
@@ -131,7 +130,7 @@ def main():
         # print(classifier(eeg2[:, 15000:], CSP, coef, b, fs=samplingFrequency))
 
         # Save the recorded EEG
-        # np.save('/home/rtaad/Desktop/left_eeg',eeg1)
+        # np.save('/home/rtaad/Desktop/left_eeg', eeg1)
         # np.save('/home/rtaad/Desktop/right_eeg', eeg2)
 
     """ System Loop """
