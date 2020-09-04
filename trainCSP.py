@@ -57,7 +57,7 @@ def trainCSP(X, y, npat, optmode, covMethod):
 
     # Optimize CSP filters
     if optmode == 'ratiotrace':
-        D, W = scipy.linalg.eig(S1, S2)
+        D, W = scipy.linalg.eig(S1, S1 + S2)
         # D, W = np.linalg.eig(np.matmul(S1, np.linalg.inv(S2)))
         # D,W = np.linalg.eig(np.matmul(S1,S1+S2))
         labda = D
