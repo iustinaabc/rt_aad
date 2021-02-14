@@ -24,8 +24,12 @@ def emulate():
     i = 0
     # next make an outlet
     outlet = StreamOutlet(info)
-    eeg_left = np.load('/home/rtaad/Desktop/left_eeg1.npy')
-    eeg_right = np.load('/home/rtaad/Desktop/right_eeg1.npy')
+    # # case WINDOWS / IOS
+    # TODO: change location eeg_left & right (in case of non-linux)
+
+    # # case LINUX
+    # eeg_left = np.load('/home/rtaad/Desktop/left_eeg1.npy') # in case of linux
+    # eeg_right = np.load('/home/rtaad/Desktop/right_eeg1.npy') #linux
 
     print("[EEG emulator sending data now]")
     while True:
