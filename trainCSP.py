@@ -1,9 +1,9 @@
 import numpy as np
 from tmprod import tmprod
 import scipy
+from lwcov import lwcov
 
-
-def trainCSP(X, y, npat, optmode, covMethod):
+def trainCSP(X, y, npat, optmode, covMethod='lwcov'):
     """
     Trains the FBCSP filters on the supplied EEG data and labels
 
@@ -40,9 +40,9 @@ def trainCSP(X, y, npat, optmode, covMethod):
     Xm1 = np.reshape(X1, (X1.shape[0], X1.shape[1] * X1.shape[2]))
     Xm2 = np.reshape(X2, (X2.shape[0], X2.shape[1] * X2.shape[2]))
 
-    if covMethod == 'lwcov':  # nog terug naar lwcov veranderen
-        S1 = np.cov(Xm1)
-        S2 = np.cov(Xm2)
+    if covMethod == 'lwcov':
+        S1 = lwcov(Xm1)
+        S2 = lwcov(Xm2)
     elif covMethod == 'classic':
         S1 = np.cov(Xm1)
         S2 = np.cov(Xm2)
