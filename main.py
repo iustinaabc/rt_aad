@@ -30,6 +30,10 @@ def main():
     windowLengthTraining = 10  # timeframe for training is split into windows of windowlength * fs for lda calculation
     markers = np.array([1, 2])  # First Left, then Right; for training
 
+    #Where to store eeg data in case of subject specific filtertraining:
+    location_eeg1 = '/home/rtaad/Desktop/eeg1.npy'
+    location_eeg2 = '/home/rtaad/Desktop/eeg2.npy'
+
     # stimulusReconstruction = False  # Use of stimulus reconstruction
 
     # volumeThreshold = 50  # in percentage
@@ -38,6 +42,8 @@ def main():
 
     dumpTrainingData = False
 
+    # TODO: split eegdata in left and right -> location (in file eeg_emulation)
+    # !! Verify used OS in eeg_emulation
     """ SET-UP Emulator """
     eeg_emulator = multiprocessing.Process(target=emulate)
     eeg_emulator.daemon = True
@@ -97,8 +103,8 @@ def main():
         # ap.stop() # TODO: replace this with you own code to stop the audio player
         
         if dumpTrainingData:
-            # TODO replace full path by a setable parameter
-            np.save('/home/rtaad/Desktop/eeg1.npy', eeg1)
+            # DONE replace full path by a setable parameter
+            np.save(location_eeg1, eeg1)
 
         # TODO: replace with your audio player code
         # ap = AudioPlayer()
@@ -130,8 +136,8 @@ def main():
         eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels, starttime=startright+3, normframe=timeframe)
 
         if dumpTrainingData:
-            # TODO replace full path by a setable parameter
-            np.save('/home/rtaad/Desktop/eeg2.npy', eeg2)
+            # DONE replace full path by a setable parameter
+            np.save(location_eeg2, eeg2)
 
         # TODO: better if functions take EEG1 and EEG2, rather than concatenating here
         eeg = np.concatenate((eeg1[:,15000:30000],eeg1[:,45000:],eeg2[:,15000:30000],eeg2[:,45000:]), axis=1)
