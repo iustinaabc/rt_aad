@@ -22,7 +22,7 @@ def main():
     timeframe = 750  # in samples (timeframe / samplingFrequency = time in seconds)
     overlap = 0  # in samples
 
-    trainingDataset = "das-2016"
+    trainingDataset = 'dataSubject8.mat'
     updateCSP = True  # Using subject specific CSP filters
     updatecov = True  # Using subject specific covariance matrix
     updatebias = True  # Using subject specific bias
@@ -131,7 +131,7 @@ def main():
 
         if dumpTrainingData:
             # TODO replace full path by a setable parameter
-            np.save('/home/rtaad/Desktop/eeg2.npy', eeg1)
+            np.save('/home/rtaad/Desktop/eeg2.npy', eeg2)
 
         # TODO: better if functions take EEG1 and EEG2, rather than concatenating here
         eeg = np.concatenate((eeg1[:,15000:30000],eeg1[:,45000:],eeg2[:,15000:30000],eeg2[:,45000:]), axis=1)
