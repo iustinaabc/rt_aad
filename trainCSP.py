@@ -91,7 +91,7 @@ def trainCSP(X, y, npat, optmode, covMethod='lwcov'):
         # tr[1] = np.trace(np.transpose(W)*S2*W)/np.trace(np.transpose(W)*(S1+S2)*W)
         tr[1] = np.trace(np.matmul(np.matmul(np.transpose(W), S2), W)) / \
                 np.trace(np.matmul(np.matmul(np.transpose(W), (S1 + S2)), W))
-    elif optmode == 'traceratio':
+    ###elif optmode == 'traceratio':
 
         # Initialize
         npathalf = round(npat / 2)
