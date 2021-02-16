@@ -148,7 +148,7 @@ def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, 
 
 
     """TRAIN CSP FILTERS"""
-    print("Training CSP")
+    print("---Training CSP---")
 
     first = True
     CSP = dict()
