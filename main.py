@@ -12,6 +12,8 @@ from trainFilters import trainFilters
 from pylsl import StreamInlet, resolve_stream, local_clock
 import multiprocessing
 from eeg_emulation import emulate
+from scipy.io import loadmat
+import matplotlib.pyplot as plt
 
 def main():
     # Parameters
@@ -22,8 +24,10 @@ def main():
     timeframe = 750  # in samples (timeframe / samplingFrequency = time in seconds)
     overlap = 0  # in samples
 
-    trainingDataset = 'dataSubject8.mat'
-    updateCSP = True  # Using subject specific CSP filters
+    #trainingDataset = 'dataSubject8.mat'
+    data_subject = loadmat('dataSubject8.mat')
+    trainingDataset = np.squeeze(np.array(data_subject.get('eegTrials')))
+    updateCSP = False  # Using subject specific CSP filters
     updatecov = True  # Using subject specific covariance matrix
     updatebias = True  # Using subject specific bias
     timeframeTraining = 180*samplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
@@ -50,6 +54,7 @@ def main():
     time.sleep(5)
     eeg_emulator.start()
 
+
     """ SET-UP Initialize variables """
     leftOrRight = None
     eeg = None
@@ -62,6 +67,36 @@ def main():
 
     # create a new inlet to read from the stream
     EEG_inlet = StreamInlet(streams[0])
+
+    '''
+    ##PLOTTING EEG EMULATION##
+    i = 0
+    samples = []
+    while True:
+        sample, timestamp = EEG_inlet.pull_sample()
+        samples.append(sample)
+        i+=1
+        if i == 100:
+            break
+    samples = np.transpose(samples)
+    plt.figure("EEG emulation, for all channels")
+    plt.title("EEG emulation, for all channels")
+    plt.plot(np.transpose(samples))
+    plt.show()
+    plt.close()
+    for i in range(0,24):
+        mean = np.mean(samples[i])
+        for j in range(100):
+            samples[i][j] = samples[i][j]-mean
+    plt.figure("EEG emulation, for all channels - MEAN ")
+    plt.title("EEG emulation, for all channels minus DC-value")
+    plt.plot(np.transpose(samples))
+    plt.show()
+    plt.close()
+    '''
+
+
+
 
     # TODO: these are the ALSA related sound settings, to be replaced with
     # by your own audio interface building block. Note that the volume
@@ -92,6 +127,7 @@ def main():
     if False in [updateCSP,updatecov,updatebias]:
         # Train the CSP filters on dataset of other subjects (subject independent)
         CSP, coef, b = trainFilters(dataset=trainingDataset)
+
 
     else:
         # Update the FBCSP and LDA on eeg of the subject (subject specific)
