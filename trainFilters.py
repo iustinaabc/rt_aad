@@ -11,7 +11,7 @@ from segment import segment
 import random
 
 
-def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, trialSize=None, fs=250, windowLength=None):
+def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=None, fs=250, windowLength=None):
     """
     Can be used both on a dataset to train Subject Independent filters and LDA as on Subject EEG recording to train
     Subject Specific filters and LDA
@@ -85,6 +85,9 @@ def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, 
             # Inconsistente subject verwijderd (nr 7 (6+1))
             trainingSet = set(range(1, 11))-{6}
 
+        if dataset == "dataSubject8.mat":
+            # TODO: aanpassen zodat alle (consistente) subjects gebruikt worden voor training
+            trainingSet = set('8')
 
         firstTrainingSubject = True
         print("Loading data other subjects")
@@ -99,6 +102,8 @@ def trainFilters(usingDataset=True, dataset="das-2016", eeg=None, markers=None, 
             eeg = eeg[:, :, ind]
 
             # apply FB
+            #eerst afmetingen: shape eeg (24, 7200, 48)
+            #nu afmetingen eeg: shape eeg (48, 24, 7200)
             eegTemp = eeg
             eeg = np.zeros((eeg.shape[0], len(params["filterbankBands"][0]), eeg.shape[1], eeg.shape[2]), dtype=np.float32)
             for band in range(len(params["filterbankBands"][0])):

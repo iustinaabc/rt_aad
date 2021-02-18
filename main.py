@@ -24,9 +24,9 @@ def main():
     timeframe = 750  # in samples (timeframe / samplingFrequency = time in seconds)
     overlap = 0  # in samples
 
-    #trainingDataset = 'dataSubject8.mat'
-    data_subject = loadmat('dataSubject8.mat')
-    trainingDataset = np.squeeze(np.array(data_subject.get('eegTrials')))
+    trainingDataset = 'dataSubject8.mat'
+    #data_subject = loadmat('dataSubject8.mat')
+    #trainingDataset = np.squeeze(np.array(data_subject.get('eegTrials')))
     updateCSP = False  # Using subject specific CSP filters
     updatecov = True  # Using subject specific covariance matrix
     updatebias = True  # Using subject specific bias

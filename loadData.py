@@ -1,5 +1,6 @@
-import scipy.io as spio
+#import scipy.io as spio
 import numpy as np
+from scipy.io import loadmat
 
 
 def loadData(dataset,number,preprocessing,varargin):
@@ -21,7 +22,7 @@ def loadData(dataset,number,preprocessing,varargin):
     if dataset == 'das-2016':
         number = number+1
         # load data
-        mat = spio.loadmat('data/dataSubject'+str(number)+'.mat')
+        mat = loadmat('data/dataSubject'+str(number)+'.mat')
         attendedEar = mat["attendedEar"][0]
         fs = 64
         trialLength = fs*60
@@ -51,20 +52,61 @@ def loadData(dataset,number,preprocessing,varargin):
         eeg = np.transpose(eeg, (2, 1, 0))
 
         cz = 48
+        ntrials = len(attendedEar)
+        trialLength = eeg.shape[1]
+
+        # Preprocessing
+        if preprocessing["eegChanSel"] != []:
+            eeg = eeg[preprocessing["eegChanSel"], :, :]
+
+        if preprocessing["normalization"]:
+            for tr in range(ntrials):
+                mean = np.average(eeg[:, :, tr], 1)
+                means = np.full((eeg.shape[1], eeg.shape[0]), mean)
+                means = np.transpose(means)
+                eeg[:, :, tr] = eeg[:, :, tr] - means
+                eeg[:, :, tr] = eeg[:, :, tr] / np.linalg.norm(eeg[:, :, tr]) * eeg.shape[1]
+
+    if dataset == 'dataSubject8.mat':
+        number = 8
+        # load data
+        # data_subject = loadmat('dataSubject8.mat')
+        # trainingDataset = np.squeeze(np.array(data_subject.get('eegTrials')))
+        data = loadmat('dataSubject'+str(number)+'.mat')
+        attendedEar = np.squeeze(np.array(data.get('attendedEar')))
+        fs = 120
+        trialLength = fs*60
+
+        if varargin is None:
+            conditions = 'all'
+        else:
+            conditions = varargin[0]
+
+        if conditions == "dry":
+            indices = np.where(cond == 0)
+            data["eegTrials"] = data["eegTrials"][indices]
+            attendedEar = data["attendedEar"][indices]
+        if conditions == "hrtf":
+            indices = np.where(cond == 1)
+            data["eegTrials"] = data["eegTrials"][indices]
+            attendedEar = data["attendedEar"][indices]
+
+        # eegTrials is list of cells (trials with dimension time x channel)
+        # Convert to numpy array with dimensions channel x time x trial
+
+        eegTrials = np.squeeze(np.array(data.get('eegTrials')))
+        eeg = eegTrials
+        eeg = np.zeros((eegTrials.shape[0], eegTrials[0].shape[0], eegTrials[0].shape[1]))
+        for i in range(eeg.shape[0]):
+            eeg[i] = eegTrials[i]
+        eeg = np.transpose(eeg, (0, 2, 1))
+
+        #cz = 48
+        print("shape eegTrials", np.shape(eegTrials))
+        print("shape eeg", np.shape(eeg))
 
     ntrials = len(attendedEar)
-    trialLength = eeg.shape[1]
+    #trialLength = eeg.shape[1]
 
-    # Preprocessing
-    if preprocessing["eegChanSel"] != []:
-        eeg = eeg[preprocessing["eegChanSel"], :, :]
-
-    if preprocessing["normalization"]:
-        for tr in range(ntrials):
-            mean = np.average(eeg[:, :, tr], 1)
-            means = np.full((eeg.shape[1], eeg.shape[0]), mean)
-            means = np.transpose(means)
-            eeg[:, :, tr] = eeg[:, :, tr] - means
-            eeg[:, :, tr] = eeg[:, :, tr]/np.linalg.norm(eeg[:, :, tr])*eeg.shape[1]
 
     return eeg, attendedEar, fs, trialLength
