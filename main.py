@@ -74,9 +74,10 @@ def main():
     samples = []
     while True:
         sample, timestamp = EEG_inlet.pull_sample()
+        #print(timestamp)
         samples.append(sample)
         i+=1
-        if i == 100:
+        if i == 7200:
             break
     samples = np.transpose(samples)
     plt.figure("EEG emulation, for all channels")
@@ -86,15 +87,20 @@ def main():
     plt.close()
     for i in range(0,24):
         mean = np.mean(samples[i])
-        for j in range(100):
+        for j in range(7200):
             samples[i][j] = samples[i][j]-mean
     plt.figure("EEG emulation, for all channels - MEAN ")
     plt.title("EEG emulation, for all channels minus DC-value")
     plt.plot(np.transpose(samples))
     plt.show()
     plt.close()
-    '''
+    plt.figure("EEG emulation, for channel 4")
+    plt.title("EEG emulation, for channel 4")
+    plt.plot(samples[3])
+    plt.show()
+    plt.close()
 
+    '''
 
 
 

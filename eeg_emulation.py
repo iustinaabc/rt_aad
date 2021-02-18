@@ -32,6 +32,8 @@ def emulate():
     attended_ear = np.squeeze(np.array(data_subject.get('attendedEar')))
     eeg_data = np.squeeze(np.array(data_subject.get('eegTrials')))
     eeg_left, eeg_right = group_by_class(eeg_data, attended_ear)
+    print("shape eegdata", np.shape(eeg_data[0]))
+    print("shape eegleft", np.shape(eeg_left))
 
     # # case LINUX
     # eeg_left = np.load('/home/rtaad/Desktop/left_eeg1.npy')
@@ -42,13 +44,14 @@ def emulate():
         for j in range(7200):
             # make a new random 24-channel sample; this is converted into a
             # pylsl.vectorf (the data type that is expected by push_sample)
-            mysample = np.array(eeg_left)[i,:,j]
+            # mysample = np.array(eeg_left)[i, :, j]
+            mysample = np.transpose(np.array(eeg_data)[i])[:,j]
             # mysample = eeg_left[:, int(i * 750):int((i + 1) * 750)]
             #24x1
             # now send it and wait for a bit
             outlet.push_sample(mysample)
-            time.sleep(0.01)
+            # time.sleep(0.01)
         i += 1
         #mag dan waarschijnlijk nog weg:
-        if i == 24:
+        if i == 48:
             i = 0
