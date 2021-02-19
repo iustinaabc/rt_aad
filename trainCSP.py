@@ -1,7 +1,16 @@
+#!/usr/bin/env python3
+# -*- Sofie en Nele zijn tof-*-
+"""
+Created while listening to The Black Eyed Peas - Imma Be (Official Music Video)
+https://www.youtube.com/watch?v=kdAj-dBNCi4
+
+@author: Nele Eeckman, Sofie Mareels
+"""
 import numpy as np
 from tmprod import tmprod
 import scipy
 from lwcov import lwcov
+from group_by_class import group_by_class
 
 def trainCSP(X, y, npat, optmode, covMethod='lwcov'):
     """
@@ -24,21 +33,31 @@ def trainCSP(X, y, npat, optmode, covMethod='lwcov'):
                                             Dimensions should be: nr. of filter x channel
              score: (1-dimensional numpy array) The score of the CSP filter in W
              tr: (1-dimensional numpy array) The traceratio of the filtered EEG for each class
+
     """
 
     # Initialize
-    if optmode != 'traceratio' and optmode != 'ratiotrace':
+    if optmode != 'ratiotrace':
         optmode = 'ratiotrace'
     # Divide into X for each class
-    yc = np.unique(y)
+    X1, X2 = group_by_class(X, y)
+
+    print("shape X1", np.shape(X1))
+    print("shape X2", np.shape(X2))
+
+    '''
+    yc = np.unique(y) # yc = [1,2]
     indices1 = np.where(y == yc[0])
     indices2 = np.where(y == yc[1])
-
-    X1 = X[:, :, indices1[0]]
-    X2 = X[:, :, indices2[0]]
-    
+    print('X',np.shape(X))
+    X1 = X[indices1[0], :, :]
+    X2 = X[indices2[0], :, :]
+    '''
+    ###### ------ #####
     Xm1 = np.reshape(X1, (X1.shape[0], X1.shape[1] * X1.shape[2]))
+    print("shape Xm1", np.shape(Xm1))
     Xm2 = np.reshape(X2, (X2.shape[0], X2.shape[1] * X2.shape[2]))
+    print("shape Xm2", np.shape(Xm2))
 
     if covMethod == 'lwcov':
         S1 = lwcov(Xm1)
@@ -91,7 +110,9 @@ def trainCSP(X, y, npat, optmode, covMethod='lwcov'):
         # tr[1] = np.trace(np.transpose(W)*S2*W)/np.trace(np.transpose(W)*(S1+S2)*W)
         tr[1] = np.trace(np.matmul(np.matmul(np.transpose(W), S2), W)) / \
                 np.trace(np.matmul(np.matmul(np.transpose(W), (S1 + S2)), W))
-    ###elif optmode == 'traceratio':
+
+    '''
+    elif optmode == 'traceratio':
 
         # Initialize
         npathalf = round(npat / 2)
@@ -148,5 +169,6 @@ def trainCSP(X, y, npat, optmode, covMethod='lwcov'):
                 np.trace(np.matmul(np.matmul(np.transpose(W1), (S1 + S2)), W1))
         tr[1] = np.trace(np.matmul(np.matmul(np.transpose(W2), S2), W2)) / \
                 np.trace(np.matmul(np.matmul(np.transpose(W2), (S1 + S2)), W2))
+    '''
 
     return W, score, tr

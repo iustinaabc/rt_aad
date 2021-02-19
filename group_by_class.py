@@ -10,4 +10,6 @@ def group_by_class(samples, sample_classes):
             class_one.append(np.transpose(samples[i]))
         else:
             class_two.append(np.transpose(samples[i]))
+    class_one = np.array(class_one)
+    class_two = np.array(class_two)
     return class_one, class_two
