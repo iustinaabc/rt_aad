@@ -3,7 +3,7 @@
 """
 Created on Thu Jun  4 09:50:40 2020
 
-@author: Jasper Wouters
+@author: Jasper Wouters, Nele Eeckman, Sofie Mareels
 """
 
 import time
@@ -32,8 +32,6 @@ def emulate():
     attended_ear = np.squeeze(np.array(data_subject.get('attendedEar')))
     eeg_data = np.squeeze(np.array(data_subject.get('eegTrials')))
     eeg_left, eeg_right = group_by_class(eeg_data, attended_ear)
-    print("shape eegdata", np.shape(eeg_data[0]))
-    print("shape eegleft", np.shape(eeg_left))
 
     # # case LINUX
     # eeg_left = np.load('/home/rtaad/Desktop/left_eeg1.npy')

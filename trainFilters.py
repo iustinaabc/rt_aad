@@ -85,7 +85,7 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
             # Inconsistente subject verwijderd (nr 7 (6+1))
             trainingSet = set(range(1, 11))-{6}
 
-        if dataset == "dataSubject8.mat":
+        if dataset == "dataSubject":
             # TODO: aanpassen zodat alle (consistente) subjects gebruikt worden voor training
             trainingSet = set('8')
 
@@ -99,24 +99,24 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
             ind = random.choices(list(range(0, len(attendedEar))),
                                  k=round(params["preprocessing"]["subset"] * len(attendedEar)))
             attendedEar = attendedEar[ind]
-            eeg = eeg[:, :, ind]
+            eeg = eeg[ind, :, :]
 
             # apply FB
             #eerst afmetingen: shape eeg (24, 7200, 48)
             #nu afmetingen eeg: shape eeg (48, 24, 7200)
-            eegTemp = eeg
+            # [0] --> [1], [1] ---> [2], [2] --> [0]
+            eegTemp = eeg  #(24,7200,48) ---> (7200, 24, 48) ===== np.transpose(onze eeg)
             eeg = np.zeros((eeg.shape[0], len(params["filterbankBands"][0]), eeg.shape[1], eeg.shape[2]), dtype=np.float32)
             for band in range(len(params["filterbankBands"][0])):
                 b, a = scipy.signal.iirfilter(8, np.array(
                     [2 * params["filterbankBands"][0, band] / fs, 2 * params["filterbankBands"][1, band] / fs]))
-                eeg[:, band, :, :] = np.transpose(scipy.signal.filtfilt(b, a, np.transpose(eegTemp, (1, 0, 2)), axis=0),
-                                                  (1, 0, 2))
-                # eeg now has dimensions channels x time x trials
-                mean = np.average(eeg[:, band, :, :], 1)
-                means = np.full((eeg.shape[2], eeg.shape[0], eeg.shape[3]), mean)
-                means = np.transpose(means, (1, 0, 2))
+                eeg[:, band, :, :] = np.transpose(scipy.signal.filtfilt(b, a, np.transpose(eegTemp), axis=0))
+                # shape eeg: trials (14) x bands (1) x channels (24) x time (7200)
+                mean = np.average(eeg[:, band, :, :], 2) # shape: trials (14) x channels(24)
+                means = np.full((eeg.shape[3], eeg.shape[0], eeg.shape[2]), mean) # channels(24) x trials(14) x time(7200)
+                means = np.transpose(means, (1,2,0))
 
-                eeg[:, band, :, :] = eeg[:, band, :, :] - means
+                eeg[:, band, :, :] = eeg[:, band, :, :] - means # trials(14) x (band(1)x) channels(24) x time(7200)
             del eegTemp
             # save results
             if firstTrainingSubject:
@@ -128,6 +128,7 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
                 labels = np.concatenate((labels, attendedEar))
 
 
+    #TODO: subject specific case
     else:  # When the training data is subject specific and 2-dimensional in channels x time
 
         # apply FB
@@ -158,7 +159,7 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
     first = True
     CSP = dict()
     for band in range(0, len(params["filterbankBands"][0])):
-        Xtrain = np.squeeze(X[:, band, :, :])
+        Xtrain = X[:, band, :, :]
 
         # Covariance weighting
 

@@ -67,8 +67,7 @@ def loadData(dataset,number,preprocessing,varargin):
                 eeg[:, :, tr] = eeg[:, :, tr] - means
                 eeg[:, :, tr] = eeg[:, :, tr] / np.linalg.norm(eeg[:, :, tr]) * eeg.shape[1]
 
-    if dataset == 'dataSubject8.mat':
-        number = 8
+    if dataset == 'dataSubject':
         # load data
         # data_subject = loadmat('dataSubject8.mat')
         # trainingDataset = np.squeeze(np.array(data_subject.get('eegTrials')))
@@ -92,18 +91,16 @@ def loadData(dataset,number,preprocessing,varargin):
             attendedEar = data["attendedEar"][indices]
 
         # eegTrials is list of cells (trials with dimension time x channel)
-        # Convert to numpy array with dimensions channel x time x trial
+        # Convert to numpy array with dimensions trial(48) x channel(24) x time(7200)
 
         eegTrials = np.squeeze(np.array(data.get('eegTrials')))
         eeg = eegTrials
         eeg = np.zeros((eegTrials.shape[0], eegTrials[0].shape[0], eegTrials[0].shape[1]))
         for i in range(eeg.shape[0]):
             eeg[i] = eegTrials[i]
-        eeg = np.transpose(eeg, (0, 2, 1))
+        eeg = np.transpose(eeg, (0, 2, 1)) #[minutes(48), channels(24), time(7200)]
 
         #cz = 48
-        print("shape eegTrials", np.shape(eegTrials))
-        print("shape eeg", np.shape(eeg))
 
     ntrials = len(attendedEar)
     #trialLength = eeg.shape[1]
