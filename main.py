@@ -68,29 +68,34 @@ def main():
     # create a new inlet to read from the stream
     EEG_inlet = StreamInlet(streams[0])
 
-
-    # realtime EEG-plot:
+    '''
+    ##REALTIME EEG EMULATION PLOT##:
+    
     fig = plt.figure()
-    x_axis_start = 0
-    x_axis_end = 1000
-    plt.axis([x_axis_start, x_axis_end, 0, 1])
+    plt.title("Realtime eeg emulation")
+    plt.axis([0, 1000, None, None])
 
-    #x = [0]*100
-    y = [[0]*24] * 100
+    x = [[0]*24]*1000
+    y = [[0]*24] * 1000
     i = 0
 
     while True:
         sample, timestamp = EEG_inlet.pull_sample()
-        #x.append(i)
+        x.append([i+1000]*24)
         y.append(sample)
+        
         # y = y[-100:]
-        plt.clf()
-        plt.plot(y[-100:])
+        # plt.plot(x[i:(i+1000)], y[i:(i+1000)])
+        
+        plt.axis([i, i+1050, None, None])
+        plt.plot(x[-1000:], y[-1000:])
         plt.draw()
+        plt.pause(0.01)
         i+=1
-        plt.axis([x_axis_start+i, x_axis_end+i, 0, 1])
-
+        plt.clf()
     '''
+
+    ''' 
     ##PLOTTING EEG EMULATION##
     i = 0
     samples = []
