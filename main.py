@@ -68,6 +68,28 @@ def main():
     # create a new inlet to read from the stream
     EEG_inlet = StreamInlet(streams[0])
 
+
+    # realtime EEG-plot:
+    fig = plt.figure()
+    x_axis_start = 0
+    x_axis_end = 1000
+    plt.axis([x_axis_start, x_axis_end, 0, 1])
+
+    #x = [0]*100
+    y = [[0]*24] * 100
+    i = 0
+
+    while True:
+        sample, timestamp = EEG_inlet.pull_sample()
+        #x.append(i)
+        y.append(sample)
+        # y = y[-100:]
+        plt.clf()
+        plt.plot(y[-100:])
+        plt.draw()
+        i+=1
+        plt.axis([x_axis_start+i, x_axis_end+i, 0, 1])
+
     '''
     ##PLOTTING EEG EMULATION##
     i = 0
@@ -99,8 +121,9 @@ def main():
     plt.plot(samples[3])
     plt.show()
     plt.close()
-
     '''
+
+
 
 
 
@@ -230,6 +253,9 @@ def main():
         # Receive EEG from LSL
         print("---Receiving EEG---")
         eeg, unused = receive_eeg(EEG_inlet, timeframe, datatype=datatype, overlap=overlap, eeg=eeg, channels=channels, normframe=timeframe)
+
+        #realtime EEG-plot:
+
 
         # Classify eeg chunk into left or right attended speaker using CSP filters
         print("---Classifying---")
