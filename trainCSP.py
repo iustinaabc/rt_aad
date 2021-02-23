@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-# -*- Sofie en Nele zijn tof-*-
 """
-Created while listening to The Black Eyed Peas - Imma Be (Official Music Video)
-https://www.youtube.com/watch?v=kdAj-dBNCi4
-
 @author: Nele Eeckman, Sofie Mareels
 """
 import numpy as np
@@ -11,8 +7,21 @@ from tmprod import tmprod
 import scipy
 from lwcov import lwcov
 from group_by_class import group_by_class
+import scipy.linalg as la
 
-def trainCSP(X, y, npat, optmode, covMethod='lwcov'):
+def CSP(class_covariances, size):
+    # Solve the generalized eigenvalue problem resulting in eigenvalues and corresponding eigenvectors and
+    # sort them in descending order.
+    eigenvalues, eigenvectors = la.eigh(class_covariances[0], class_covariances[1])
+    id_descending = np.argsort(eigenvalues)[::-1]
+    eigenvectors = eigenvectors[:, id_descending]
+    eigenvectors_begin = np.array(eigenvectors[:, :int(size/2)])
+    eigenvectors_end = np.array(eigenvectors[:, int(np.shape(eigenvectors)[1]-size/2):])
+    eigenvectors = np.concatenate((eigenvectors_begin, eigenvectors_end), axis=1)
+    return eigenvectors
+
+
+def trainCSP(X, y, spatial_dim, optmode, covMethod='lwcov'):
     """
     Trains the FBCSP filters on the supplied EEG data and labels
 
@@ -23,7 +32,7 @@ def trainCSP(X, y, npat, optmode, covMethod='lwcov'):
 
     :param y: (1-dimensional numpy array) The labels defining a class for each trial
 
-    :param npat: (int) Amount of Spatial filters used per band (K in paper)
+    :param spatial_dim: (int) Amount of Spatial filters used per band (K in paper)
 
     :param optmode: (str) optimization mode: 'ratiotrace' or 'traceratio'
 
@@ -41,67 +50,88 @@ def trainCSP(X, y, npat, optmode, covMethod='lwcov'):
         optmode = 'ratiotrace'
     # Divide into X for each class
     X1, X2 = group_by_class(X, y)
+    X1 = np.transpose(X1, (0, 2, 1))
+    X2 = np.transpose(X2, (0, 2, 1))
 
-    print("shape X1", np.shape(X1))
-    print("shape X2", np.shape(X2))
-
-    '''
-    yc = np.unique(y) # yc = [1,2]
-    indices1 = np.where(y == yc[0])
-    indices2 = np.where(y == yc[1])
-    print('X',np.shape(X))
-    X1 = X[indices1[0], :, :]
-    X2 = X[indices2[0], :, :]
-    '''
-    ###### ------ #####
-    Xm1 = np.reshape(X1, (X1.shape[0], X1.shape[1] * X1.shape[2]))
-    print("shape Xm1", np.shape(Xm1))
-    Xm2 = np.reshape(X2, (X2.shape[0], X2.shape[1] * X2.shape[2]))
-    print("shape Xm2", np.shape(Xm2))
-
+    # TODO: lwcov doesn't work, need to look at it
     if covMethod == 'lwcov':
-        S1 = lwcov(Xm1)
-        S2 = lwcov(Xm2)
+        first = True
+        S = []
+        for group in [X1, X2]:
+            for trials in group:
+                if first:
+                    Stemp = lwcov(trials)
+                    first = False
+                else:
+                    Stemp += lwcov(trials)
+            Stemp = Stemp / np.shape(group)[0]
+            S.append(Stemp)
+            print("GELUKT!!!")
+        S1 = S[0]
+        S2 = S[1]
     elif covMethod == 'classic':
-        S1 = np.cov(Xm1)
-        S2 = np.cov(Xm2)
+        first = True
+        S = []
+        for group in [X1, X2]:
+            for trials in group:
+                if first:
+                    Stemp = np.cov(trials)
+                    first = False
+                else:
+                    Stemp += np.cov(trials)
+            Stemp = Stemp / np.shape(group)[0]
+            S.append(Stemp)
 
-    if npat is None:
-        patidx = list(range(X.shape[0]))
-    else:
-        patidx = list(range(int(np.ceil(npat / 2)))) + list(range(X.shape[0] - int(np.ceil(npat / 2)), X.shape[0]))
 
-    S1 = S1 / (np.trace(S1))
-    S2 = S2 / (np.trace(S2))
+    '''---Optimize CSP filters---'''
 
-    # Optimize CSP filters
+    # Onze code
+
+    W = CSP(S, spatial_dim)
+
+    # Oude code, niet goed
+    '''
+    S1 = S[0]
+    S2 = S[1]
+    
     if optmode == 'ratiotrace':
+        if spatial_dim is None:
+            patidx = list(range(X.shape[0])) # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+            print("patidx NONE", patidx)
+        else:
+            patidx = list(range(int(np.ceil(spatial_dim / 2)))) + list(range(X.shape[0] - int(np.ceil(spatial_dim / 2)), X.shape[0]))
+            print("patidx ELSE",patidx)
+        
+        S1 = S1 / (np.trace(S1))
+        S2 = S2 / (np.trace(S2))
+        
         D, W = scipy.linalg.eig(S1+0.01*np.diag(np.diag(S1)), S2+0.01*np.diag(np.diag(S2)))
         # D, W = np.linalg.eig(np.matmul(S1, np.linalg.inv(S2)))
         # D,W = np.linalg.eig(np.matmul(S1,S1+S2))
-        labda = D
-        print(labda.shape)
+        lamda = D
+        print(lamda.shape)
 
         if True:
-            print(X1.shape, 'bam', W.shape)
+            print("X1 SHAPE", X1.shape)
+            print('W SHAPE', W.shape)
             Y1 = tmprod(X1, np.transpose(W))
             Y2 = tmprod(X2, np.transpose(W))
-            print(Y2.shape)
+            print("SHAPE Y2", Y2.shape)
             Y1 = np.var(Y1, axis=1)
             Y2 = np.var(Y2, axis=1)
             score = np.median(Y1, axis=1) / (np.median(Y1, axis=1) + np.median(Y2, axis=1))
         else:
-            score = labda
+            score = lamda
 
         # sort according to median relation
         order = np.argsort(-score)
         score = -np.sort(-score)
-        labda = labda[order]
+        lamda = lamda[order]
         W = W[:, order]
 
         # Truncate to the desired number of CSP patterns
         W = W[:, patidx]
-        labda = labda[patidx]
+        lamda = lamda[patidx]
         score = score[patidx]
         tr = np.zeros((2,))
         # tr[0] = np.trace(np.transpose(W)*S1*W)/np.trace(np.transpose(W)*(S1+S2)*W)
@@ -110,15 +140,16 @@ def trainCSP(X, y, npat, optmode, covMethod='lwcov'):
         # tr[1] = np.trace(np.transpose(W)*S2*W)/np.trace(np.transpose(W)*(S1+S2)*W)
         tr[1] = np.trace(np.matmul(np.matmul(np.transpose(W), S2), W)) / \
                 np.trace(np.matmul(np.matmul(np.transpose(W), (S1 + S2)), W))
+    '''
 
     '''
     elif optmode == 'traceratio':
 
         # Initialize
-        npathalf = round(npat / 2)
+        spatial_dimhalf = round(spatial_dim / 2)
 
         # compute CSP filters for class 1 normalized vector basis for that dimension
-        W1 = np.random.randn(S1.shape[0], npathalf)
+        W1 = np.random.randn(S1.shape[0], spatial_dimhalf)
         W1, r = np.linalg.qr(W1)
 
         relchange = np.Inf
@@ -136,15 +167,15 @@ def trainCSP(X, y, npat, optmode, covMethod='lwcov'):
             order = np.argsort(-labda)
             labda = -np.sort(-labda)
             temp = temp[:, order]
-            labda = labda[0:npathalf]
-            W1 = temp[:, 0:npathalf]
+            labda = labda[0:spatial_dimhalf]
+            W1 = temp[:, 0:spatial_dimhalf]
             relchange = abs(tr - tr0) / tr
             tr0 = tr
 
         score = labda
 
         # compute CSP filters for class 2
-        W2 = np.random.randn(S2.shape[0], npathalf)
+        W2 = np.random.randn(S2.shape[0], spatial_dimhalf)
         W2, r = np.linalg.qr(W2)
 
         relchange = np.Inf
@@ -156,8 +187,8 @@ def trainCSP(X, y, npat, optmode, covMethod='lwcov'):
             order = np.argsort(-labda)
             labda = -np.sort(-labda)
             temp = temp[:, order]
-            labda = labda[0:npathalf]
-            W2 = temp[:, :npathalf]
+            labda = labda[0:spatial_dimhalf]
+            W2 = temp[:, :spatial_dimhalf]
             relchange = abs(tr - tr0) / tr
             tr0 = tr
 
@@ -170,5 +201,8 @@ def trainCSP(X, y, npat, optmode, covMethod='lwcov'):
         tr[1] = np.trace(np.matmul(np.matmul(np.transpose(W2), S2), W2)) / \
                 np.trace(np.matmul(np.matmul(np.transpose(W2), (S1 + S2)), W2))
     '''
+
+    score = 0
+    tr = [0, 0]
 
     return W, score, tr
