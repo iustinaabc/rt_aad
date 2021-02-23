@@ -60,14 +60,13 @@ def trainCSP(X, y, spatial_dim, optmode, covMethod='lwcov'):
         for group in [X1, X2]:
             for trials in group:
                 if first:
-                    Stemp = lwcov(trials)
+                    s_temp = lwcov(trials)
                     first = False
                 else:
-                    Stemp += lwcov(trials)
-            Stemp = Stemp / np.shape(group)[0]
-            S.append(Stemp)
-        S1 = S[0]
-        S2 = S[1]
+                    s_temp += lwcov(trials)
+            first = True
+            s_temp = s_temp / np.shape(group)[0]
+            S.append(s_temp)
     elif covMethod == 'classic':
         first = True
         S = []
@@ -78,6 +77,7 @@ def trainCSP(X, y, spatial_dim, optmode, covMethod='lwcov'):
                     first = False
                 else:
                     Stemp += np.cov(trials)
+            first = True
             Stemp = Stemp / np.shape(group)[0]
             S.append(Stemp)
 
