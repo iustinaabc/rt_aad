@@ -168,33 +168,48 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
         [W, score, traceratio] = trainCSP(Xtrain, labels, params["csp"]["spatial_dim"], params["csp"]["optmode"],
                                                    params["cov"]["method"])
 
-        print("trainFilters LINE 170")
-
         if first:
             CSP["W"] = W
             CSP["score"] = score
             CSP["traceratio"] = traceratio
-            Y = tmprod(np.squeeze(X[:, band, :, :]), np.transpose(CSP["W"][:, :]))
+            #X: [trials 14, bands 1, channels 24, time 7200]
+            #W: [channels 24, spatial dim 6]
+            Y = [0] * np.shape(X)[0]
+            for trial in range(np.shape(X)[0]):
+                Y[trial] = np.dot(np.transpose(CSP["W"]), np.squeeze(X[trial, band, :, :]))
 
             first = False
+            # Shape Y: [trials 14, spatial dim 6, time 7200]
 
+        # TODO: Work on multiple bands
         else:
             CSP["W"] = np.concatenate((CSP["W"], W), axis=2)
             CSP["score"] = np.concatenate((CSP["score"], score), axis=2)
             CSP["traceratio"] = np.concatenate((CSP["traceratio"], traceratio), axis=2)
 
             # Filter both training and testing data using CSP filters
-            Y = np.concatenate((Y, tmprod(np.squeeze(X[:, band, :, :]), np.transpose(CSP["W"][:, :, band]))), axis=3)
-
-    if len(params["filterbankBands"][0]) == 1:
-        Y = Y[:, :, :, np.newaxis]
-        CSP["W"] = CSP["W"][:, :, np.newaxis]
-    Y = np.transpose(Y, (0, 3, 1, 2))
-    print("SHAPE Y", np.shape(Y))
-
+            Ytemp = [0]*np.shape(X)[0]
+            for trial in range(np.shape(X)[0]):
+                Ytemp[trial]= np.dot(np.transpose(CSP["W"][:, :, band]), np.squeeze(X[trial, band, :, :]))
+            Y = np.concatenate((Y, Ytemp))
+            # Y = np.concatenate((Y, Ytemp, axis=3))
+            # Shape Y: [trials, spatial dim, time, bands]
     print("CSP TRAINING DONE")
 
-    """CALCULATE THE COEFFICIENTS"""
+    print("trainFilters LINE 195")
+
+    # Y [ trials 14, spatial dim 6, time 7200, bands 1]
+
+    if len(params["filterbankBands"][0]) == 1:
+        Y = np.squeeze(Y)
+        Y = Y[:, :, :, np.newaxis]
+        CSP["W"] = CSP["W"][ :, :, np.newaxis]
+
+    Y = np.transpose(Y, (0, 3, 1, 2))
+    #Y [ trials 14, bands, 1, spatial dim 6, time 7200]
+
+
+    """CALCULATE THE COEFFICIENTS""" #LDA
     YtrainWindow = segment(Y, windowLength * fs)
     print(YtrainWindow.shape)
     labelstrainWindow = np.repeat(labels, np.floor(trialLength / (windowLength * fs)))
