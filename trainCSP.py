@@ -66,7 +66,6 @@ def trainCSP(X, y, spatial_dim, optmode, covMethod='lwcov'):
                     Stemp += lwcov(trials)
             Stemp = Stemp / np.shape(group)[0]
             S.append(Stemp)
-            print("GELUKT!!!")
         S1 = S[0]
         S2 = S[1]
     elif covMethod == 'classic':

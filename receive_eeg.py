@@ -2,6 +2,7 @@ import numpy as np
 import math
 from pylsl import local_clock
 
+
 def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype=np.float32, channels=24, starttime=None, normframe=None):
     """
     Receives the EEG and markers from LabStreamingLayer and shifts them into the eeg array according to the timeframe
@@ -35,7 +36,7 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
         eegfinal = np.zeros((timeframe, channels), dtype=datatype)
 
     if stamps is None:  # For Synchronization
-        stamps = np.zeros((timeframe),dtype=datatype)
+        stamps = np.zeros(timeframe, dtype=datatype)
     i = 0
 
 
