@@ -69,14 +69,14 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
 
         #COVARIANCE ESTIMATION
         "cov": {
-            "method": "lwcov",  # covariance matrix estimation method: 'classic' / 'lwcov'
+            "method": "classic",  # covariance matrix estimation method: 'classic' / 'lwcov'
             "weighting": False,  # weighting of individual covariance matrices based on distance
             "distance": "riem"  # distance measure to weight training subjects: 'riem' = Riemannian distance / 'KLdiv' = Kullback-Leibner divergence
         },
 
         #CSP FILTERS
         "csp":{
-            "npat": 6,  # number of CS patterns to retain (in total, per band) (K)
+            "spatial_dim": 6,  # number of CS patterns to retain (in total, per band) (K)
             "optmode": "ratiotrace"  # optimization mode: 'ratiotrace' or 'traceratio'
         }}
 
@@ -163,9 +163,12 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
 
         # Covariance weighting
 
+
         # train CSP filter
-        [W, score, traceratio] = trainCSP(Xtrain, labels, params["csp"]["npat"], params["csp"]["optmode"],
+        [W, score, traceratio] = trainCSP(Xtrain, labels, params["csp"]["spatial_dim"], params["csp"]["optmode"],
                                                    params["cov"]["method"])
+
+        print("trainFilters LINE 170")
 
         if first:
             CSP["W"] = W
@@ -187,6 +190,9 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
         Y = Y[:, :, :, np.newaxis]
         CSP["W"] = CSP["W"][:, :, np.newaxis]
     Y = np.transpose(Y, (0, 3, 1, 2))
+    print("SHAPE Y", np.shape(Y))
+
+    print("CSP TRAINING DONE")
 
     """CALCULATE THE COEFFICIENTS"""
     YtrainWindow = segment(Y, windowLength * fs)
