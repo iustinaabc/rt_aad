@@ -74,7 +74,7 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
 
         #COVARIANCE ESTIMATION
         "cov": {
-            "method": "classic",  # covariance matrix estimation method: 'classic' / 'lwcov'
+            "method": "lwcov",  # covariance matrix estimation method: 'classic' / 'lwcov'
             "weighting": False,  # weighting of individual covariance matrices based on distance
             "distance": "riem"  # distance measure to weight training subjects: 'riem' = Riemannian distance / 'KLdiv' = Kullback-Leibner divergence
         },
@@ -202,7 +202,7 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
             # Shape Y: [trials, spatial dim, time, bands]
     print("CSP TRAINING DONE")
 
-    print("trainFilters LINE 195")
+    print("trainFilters LINE 205")
 
     # Y [ trials 14, spatial dim 6, time 7200, bands 1]
 
