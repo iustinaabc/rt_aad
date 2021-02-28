@@ -54,6 +54,41 @@ def trainCSP(X, y, spatial_dim, optmode, covMethod='lwcov'):
     X2 = np.transpose(X2, (0, 2, 1))
 
     # TODO: lwcov doesn't work, need to look at it
+    first = True
+    S = []
+    for group in [X1, X2]:
+        for trials in group:
+            if first:
+                s_temp = lwcov(np.transpose(trials))
+                first = False
+            else:
+                s_temp += lwcov(np.transpose(trials))
+        first = True
+        s_temp = s_temp / np.shape(group)[0]
+        S.append(s_temp)
+    first = True
+    T = []
+    for group in [X1, X2]:
+        for trials in group:
+            if first:
+                Ttemp = np.cov(trials)
+                first = False
+            else:
+                Ttemp += np.cov(trials)
+        first = True
+        Ttemp = Ttemp / np.shape(group)[0]
+        T.append(Ttemp)
+
+    print("S[0][0]", S[0][0])
+    print("------------------------------------")
+    print("T[0][0]", T[0][0])
+
+    if np.array_equal(S, T):
+        print("GOOOOD")
+    else:
+        print("BAAAAAD")
+
+    '''
     if covMethod == 'lwcov':
         first = True
         S = []
@@ -80,13 +115,13 @@ def trainCSP(X, y, spatial_dim, optmode, covMethod='lwcov'):
             first = True
             Stemp = Stemp / np.shape(group)[0]
             S.append(Stemp)
-
+    '''
 
     '''---Optimize CSP filters---'''
 
     # Onze code
 
-    W = CSP(S, spatial_dim)
+    W = CSP(T, spatial_dim)
 
     # Oude code, niet goed
     '''
