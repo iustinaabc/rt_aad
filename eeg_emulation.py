@@ -17,11 +17,11 @@ from scipy.io import loadmat
 
 def emulate():
     # first create a new stream info (here we set the name to BioSemi,
-    # the content-type to EEG, 24 channels, 100 Hz, and float-valued data) The
+    # the content-type to EEG, 24 channels, 120 Hz, and float-valued data) The
     # last value would be the serial number of the device or some other more or
     # less locally unique identifier for the stream as far as available (you
     # could also omit it but interrupted connections wouldn't auto-recover)
-    info = StreamInfo('BioSemi', 'EEG', 24, 100, 'float32', 'myuid34234')
+    info = StreamInfo('BioSemi', 'EEG', 24, 120, 'float32', 'myuid34234')
     
     i = 0
     # next make an outlet
@@ -43,7 +43,7 @@ def emulate():
             # make a new random 24-channel sample; this is converted into a
             # pylsl.vectorf (the data type that is expected by push_sample)
             # mysample = np.array(eeg_left)[i, :, j]
-            mysample = np.transpose(np.array(eeg_data)[i])[:,j]
+            mysample = np.array(eeg_data)[i][j]
             # mysample = eeg_left[:, int(i * 750):int((i + 1) * 750)]
             #24x1
             # now send it and wait for a bit
@@ -52,4 +52,4 @@ def emulate():
         i += 1
         #mag dan waarschijnlijk nog weg:
         if i == 48:
-            i = 0
+            break

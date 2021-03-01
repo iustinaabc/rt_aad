@@ -14,14 +14,31 @@ import multiprocessing
 from eeg_emulation import emulate
 from scipy.io import loadmat
 import matplotlib.pyplot as plt
+# filter
+from scipy.signal import butter, lfilter
+
+def butter_bandpass(low_cut, high_cut, sampling_frequency, order):
+    nyquist_frequency = 0.5 * sampling_frequency
+    low = low_cut / nyquist_frequency
+    high = high_cut / nyquist_frequency
+    b, a = butter(order, [low, high], btype='band')  # IIR filter constants
+    return b, a
+
+
+# Applies a bandpass filter to given data.
+def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
+    b, a = butter_bandpass(lowcut, highcut, fs, order=order)
+    y = lfilter(b, a, data)
+    return y
+
 
 def main():
     # Parameters
     datatype = np.float32
-    samplingFrequency = 250  # Hz
+    samplingFrequency = 120  # Hz
     channels = 24  # Channels on the EEG cap
 
-    timeframe = 750  # in samples (timeframe / samplingFrequency = time in seconds)
+    timeframe = 7200  # in samples (timeframe 7200 / samplingFrequency 120 = time in seconds = 60s)
     overlap = 0  # in samples
 
     trainingDataset = 'dataSubject'
@@ -68,69 +85,108 @@ def main():
     # create a new inlet to read from the stream
     EEG_inlet = StreamInlet(streams[0])
 
-    '''
+
+
     ##REALTIME EEG EMULATION PLOT##:
-    
     fig = plt.figure()
     plt.title("Realtime eeg emulation")
-    plt.axis([0, 1000, None, None])
+    # plt.axis([0, 125, None, None])
 
-    x = [[0]*24]*1000
-    y = [[0]*24] * 1000
+    x = []
+    samples = []
     i = 0
 
     while True:
-        sample, timestamp = EEG_inlet.pull_sample()
-        x.append([i+1000]*24)
-        y.append(sample)
+        sample, notused = EEG_inlet.pull_sample()
+        sample = np.transpose(sample)  #
+        y = butter_bandpass_filter(sample, 12, 30, 120, order=8)
+        y = np.transpose(y)
+        x.append(float(i/120))
+        samples.append(y)
         
         # y = y[-100:]
         # plt.plot(x[i:(i+1000)], y[i:(i+1000)])
         
-        plt.axis([i, i+1050, None, None])
-        plt.plot(x[-1000:], y[-1000:])
+        #plt.axis([i/120, (i+125)/120, None, None])
+        if len(samples) < 120:
+            #plt.plot(x, np.transpose(np.transpose(samples)[2]))
+            plt.plot(x, samples)
+        else:
+             #plt.plot(x[-120:],np.transpose(np.transpose(samples[-120:])[2]))
+            plt.plot(x[-120:],samples[-120:])
+        plt.ylabel("EEG amplitude (Volt)")
+        plt.xlabel("time (seconds)")
         plt.draw()
-        plt.pause(0.01)
+        plt.pause(1/(120))
         i+=1
         plt.clf()
-    '''
 
-    ''' 
+    '''
     ##PLOTTING EEG EMULATION##
     i = 0
     samples = []
+    timesamples = list(np.linspace(0, 1, 120))
+
+    labels=[]
+    for nummers in range(1,25):
+        labels.append('Channel ' + str(nummers))
+
     while True:
-        sample, timestamp = EEG_inlet.pull_sample()
-        #print(timestamp)
-        samples.append(sample)
-        i+=1
+        sample, notused = EEG_inlet.pull_sample()
+        # print(timestamp)
+        sample = np.transpose(sample)  # rows = 24 channels , columns = 7200 time instances
+        y = butter_bandpass_filter(sample, 12, 30, 120, order=8)
+        y = np.transpose(y)
+        samples.append(y)
+        i += 1
         if i == 7200:
             break
-    samples = np.transpose(samples)
+    samples = samples[200:320] # 120 x 24
     plt.figure("EEG emulation, for all channels")
     plt.title("EEG emulation, for all channels")
-    plt.plot(np.transpose(samples))
+    plt.plot(timesamples, samples)
+    plt.ylabel("EEG amplitude (Volt)")
+    plt.xlabel("time (seconds)")
+    plt.legend(labels, bbox_to_anchor=(1.0, 0.5), loc="center left")
     plt.show()
     plt.close()
-    for i in range(0,24):
-        mean = np.mean(samples[i])
-        for j in range(7200):
-            samples[i][j] = samples[i][j]-mean
-    plt.figure("EEG emulation, for all channels - MEAN ")
-    plt.title("EEG emulation, for all channels minus DC-value")
-    plt.plot(np.transpose(samples))
+    for i in range(24):
+        mean = np.mean(np.transpose(samples)[i])
+        for j in range(120):
+            samples[j][i] = samples[j][i]-mean
+    plt.figure("EEG emulation, for channels 1 to 6 - MEAN ")
+    plt.title("EEG emulation, for channels 1 to 6 minus DC-value")
+    plt.plot(timesamples, samples[:,:6])
+    plt.ylabel("EEG amplitude (Volt)")
+    plt.xlabel("time (seconds)")
+    plt.legend(labels[:6], bbox_to_anchor=(1.0, 0.5), loc="center left")
     plt.show()
     plt.close()
-    plt.figure("EEG emulation, for channel 4")
-    plt.title("EEG emulation, for channel 4")
-    plt.plot(samples[3])
+    plt.figure("EEG emulation, for channel 7 to 12")
+    plt.title("EEG emulation, for channel 7 to 12")
+    plt.plot(timesamples,samples[:, 6:12])
+    plt.ylabel("EEG amplitude (Volt)")
+    plt.xlabel("time (seconds)")
+    plt.legend(labels[6:12], bbox_to_anchor=(1.0, 0.5), loc="center left")
+    plt.show()
+    plt.close()
+    plt.figure("EEG emulation, for channel 13 to 18")
+    plt.title("EEG emulation, for channel 13 to 18")
+    plt.plot(timesamples,samples[:, 13:18])
+    plt.ylabel("EEG amplitude (Volt)")
+    plt.xlabel("time (seconds)")
+    plt.legend(labels[13:18], bbox_to_anchor=(1.0, 0.5), loc="center left")
+    plt.show()
+    plt.close()
+    plt.figure("EEG emulation, for channel 19 to 24")
+    plt.title("EEG emulation, for channel 19 to 24")
+    plt.plot(timesamples, samples[:, 19:24])
+    plt.ylabel("EEG amplitude (Volt)")
+    plt.xlabel("time (seconds)")
+    plt.legend(labels[19:24], bbox_to_anchor=(1.0, 0.5), loc="center left")
     plt.show()
     plt.close()
     '''
-
-
-
-
 
     # TODO: these are the ALSA related sound settings, to be replaced with
     # by your own audio interface building block. Note that the volume
