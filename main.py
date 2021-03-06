@@ -223,7 +223,7 @@ def main():
     print("--- Training filters and LDA... ---")
     if False in [updateCSP,updatecov,updatebias]:
         # Train the CSP filters on dataset of other subjects (subject independent)
-        CSP, coef, b = trainFilters(dataset=trainingDataset)
+        CSP, coef, b = trainFilters(trainingDataset)
 
 
     else:
@@ -322,7 +322,7 @@ def main():
         print("---Receiving EEG---")
         eeg, unused = receive_eeg(EEG_inlet, timeframe, datatype=datatype, overlap=overlap, eeg=eeg, channels=channels, normframe=timeframe)
 
-        #realtime EEG-plot:
+        # realtime EEG-plot:
 
 
         # Classify eeg chunk into left or right attended speaker using CSP filters

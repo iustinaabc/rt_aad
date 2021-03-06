@@ -8,6 +8,7 @@ import scipy
 from lwcov import lwcov
 from group_by_class import group_by_class
 import scipy.linalg as la
+from sklearn import covariance
 
 def CSP(class_covariances, size):
     # Solve the generalized eigenvalue problem resulting in eigenvalues and corresponding eigenvectors and
@@ -54,51 +55,18 @@ def trainCSP(X, y, spatial_dim, optmode, covMethod='lwcov'):
     X2 = np.transpose(X2, (0, 2, 1))
 
     # TODO: lwcov doesn't work, need to look at it
-    first = True
-    S = []
-    for group in [X1, X2]:
-        for trials in group:
-            if first:
-                s_temp = lwcov(np.transpose(trials))
-                first = False
-            else:
-                s_temp += lwcov(np.transpose(trials))
-        first = True
-        s_temp = s_temp / np.shape(group)[0]
-        S.append(s_temp)
-    first = True
-    T = []
-    for group in [X1, X2]:
-        for trials in group:
-            if first:
-                Ttemp = np.cov(trials)
-                first = False
-            else:
-                Ttemp += np.cov(trials)
-        first = True
-        Ttemp = Ttemp / np.shape(group)[0]
-        T.append(Ttemp)
-
-    print("S[0][0]", S[0][0])
-    print("------------------------------------")
-    print("T[0][0]", T[0][0])
-
-    if np.array_equal(S, T):
-        print("GOOOOD")
-    else:
-        print("BAAAAAD")
-
-    '''
     if covMethod == 'lwcov':
         first = True
         S = []
         for group in [X1, X2]:
             for trials in group:
                 if first:
-                    s_temp = lwcov(trials)
+                    #s_temp = lwcov(trials)
+                    s_temp = covariance.ledoit_wolf(np.transpose(trials))[0]
                     first = False
                 else:
-                    s_temp += lwcov(trials)
+                    #s_temp += lwcov(trials)
+                    s_temp += covariance.ledoit_wolf(np.transpose(trials))[0]
             first = True
             s_temp = s_temp / np.shape(group)[0]
             S.append(s_temp)
@@ -115,13 +83,13 @@ def trainCSP(X, y, spatial_dim, optmode, covMethod='lwcov'):
             first = True
             Stemp = Stemp / np.shape(group)[0]
             S.append(Stemp)
-    '''
+
 
     '''---Optimize CSP filters---'''
 
     # Onze code
 
-    W = CSP(T, spatial_dim)
+    W = CSP(S, spatial_dim)
 
     # Oude code, niet goed
     '''

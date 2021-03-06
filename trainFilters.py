@@ -9,6 +9,8 @@ from trainCSP import trainCSP
 from tmprod import tmprod
 from segment import segment
 import random
+from sklearn import covariance
+from group_by_class import group_by_class
 
 def logenergy(y):
     outputEnergyVector = np.zeros(len(y))
@@ -202,7 +204,7 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
                 feat_temp.append(logenergy(Ytemp))
             feat = np.concatenate((feat, feat_temp))
             # Shape Y: [trials, spatial dim, time, bands]
-    print("CSP TRAINING DONE")
+            # shape feat: [trials (#minutes) , spatial dim]
 
     print("trainFilters LINE 205")
 
@@ -218,26 +220,40 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
 
 
     """CALCULATE THE COEFFICIENTS""" #LDA
-    YtrainWindow = segment(Y, windowLength * fs)
-    print(YtrainWindow.shape)
-    labelstrainWindow = np.repeat(labels, np.floor(trialLength / (windowLength * fs)))
-    feat = np.log( np.var( YtrainWindow, axis=2 ) )
-    print(feat.shape)
-    feat = np.transpose(np.reshape(feat, (feat.shape[0] * feat.shape[1], feat.shape[2])))
+    # YtrainWindow = segment(Y, windowLength * fs)
+    # print(YtrainWindow.shape)
+    # labelstrainWindow = np.repeat(labels, np.floor(trialLength / (windowLength * fs)))
+    # feat = np.log( np.var( YtrainWindow, axis=2 ) )
+    # print(feat.shape)
+    # feat = np.transpose(np.reshape(feat, (feat.shape[0] * feat.shape[1], feat.shape[2])))
 
-    trainindices1 = np.where(labelstrainWindow == 1)
-    trainindices2 = np.where(labelstrainWindow == 2)
-    mu = np.transpose(np.array([np.average(feat[trainindices1[0], :], axis=0),
-              np.average(feat[trainindices2[0], :], axis=0)]))
-    print(mu.shape)
+    f_in_classes = group_by_class(feat, attendedEar)
+    print("shape fclass1", np.shape(f_in_classes[0]))
+    mean1 = np.mean(f_in_classes[0], axis=0)
+    mean2 = np.mean(f_in_classes[1], axis=0)
+    print("shape mean1", np.shape(mean1))
+    # trainindices1 = np.where(attendedEar == 1)
+    # trainindices2 = np.where(attendedEar == 2)
+    # mu = np.transpose(np.array([np.average(feat[trainindices1[0], :], axis=0),
+    #           np.average(feat[trainindices2[0], :], axis=0)]))
+    # print(mu.shape)
 
-    S = np.cov(np.transpose(feat))
-    print(S.shape)
-    coef = np.linalg.solve(S, (np.subtract(mu[:, 1], mu[:, 0])))
-    b = -np.matmul(np.transpose(coef[:, np.newaxis]), np.sum(mu, axis=1)[:, np.newaxis])*1/2
-    b = np.squeeze(np.squeeze(b))
 
+    if params["cov"]["method"] == 'classic':
+        S = np.cov(np.transpose(feat))
+    elif params["cov"]["method"] == 'lwcov':
+        S = covariance.ledoit_wolf(feat)[0]
 
-    return CSP, coef, b, feat
+    print("shape cov",  S.shape)
+    diff_mean = np.subtract(mean2, mean1)
+    sum_mean = np.add(mean1, mean2)
+    coef = np.transpose(np.dot(np.linalg.inv(S), diff_mean))
+    b = -0.5 * np.dot(coef, sum_mean)
+
+    # coef = np.linalg.solve(S, (np.subtract(mu[:, 1], mu[:, 0])))
+    # b = -np.matmul(np.transpose(coef[:, np.newaxis]), np.sum(mu, axis=1)[:, np.newaxis])*1/2
+    # b = np.squeeze(np.squeeze(b))
+
+    return CSP, coef, b
 
 
