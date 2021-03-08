@@ -14,7 +14,7 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
 
     :param eeg: (numpy array) The previous eeg array to be filled according to the overlap
 
-    :param overlap: (int) The amount of samples to be included and keep from the previous eeg array
+    :param overlap: (int) The amount of samples to be included and kept from the previous eeg array
 
     :param trials: (int) The amount of trials with a specific class used in the training of a subject
                          timeframe/trials should be the amount of samples for each trial
@@ -25,11 +25,10 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
     :return: eeg: (np.array) 2-dimensional array of eeg samples filled according to the timeframe and overlap
              markers: (np.array) 1-dimensional array to specify the class (attended speaker) of each trial recorded.
     """
-
     # Initialize variables
     if eeg is None:
         eeg = np.zeros((normframe, channels), dtype=datatype)
-        eeg = np.zeros((timeframe, channels), dtype=datatype)
+        eegfinal = np.zeros((timeframe, channels), dtype=datatype)
     else:
         # eeg samples are added in the time dimension
         eeg = np.transpose(eeg)
@@ -39,29 +38,30 @@ def receive_eeg(EEG_inlet, timeframe, eeg=None, stamps=None, overlap=0, datatype
         stamps = np.zeros(timeframe, dtype=datatype)
     i = 0
 
-
-
-    # Check till right sample is available
+    # Check till right sample is available --> why???
+    first = True
     sample, timestamps = EEG_inlet.pull_sample()
-    while starttime and (timestamps + EEG_inlet.time_correction() - starttime < 0):
+    if first:
+        starttime = timestamps
+        first = False
+    while starttime > 0 and (timestamps + EEG_inlet.time_correction() - starttime) < 0:
         sample, timestamps = EEG_inlet.pull_sample()
-        print(timestamps + EEG_inlet.time_correction() - starttime)
-        pass
+        # pass
 
     # Pull in until full
     while True:
         lastSample = sample
         sample, timestamps = EEG_inlet.pull_sample()
-            
-        if timestamps:
-            # Add sample to the array if the samples is new
-            if lastSample != sample:
-                eeg = np.roll(eeg, -1, axis=0)
-                eeg = np.append(eeg[:-1], [sample], axis=0)
 
-                stamps[i] = timestamps
 
-                i += 1
+        # Add sample to the array if the sample is new
+        if lastSample != sample:
+            eeg = np.roll(eeg, -1, axis=0)
+            eeg = np.append(eeg[:-1], [sample], axis=0)
+
+            stamps[i] = timestamps
+
+            i += 1
 
         # If enough samples are added, eeg and markers are returned
         if i == (timeframe - overlap):

@@ -126,6 +126,81 @@ def main():
         plt.clf()
     '''
 
+    ''' NOG AANPASSEN:
+    
+    ##REALTIME EEG EMULATION PLOT##:
+    plt.figure("Realtime EEG emulation")
+
+    x = []
+    samples = []
+    filtered_samples = list()
+    i = 0
+    x_axis_start = 0
+    x_axis_end = 5
+    mean = []
+
+    labels=[]
+    for nummers in range(1,25):
+        labels.append('Channel ' + str(nummers))
+
+    while True:
+        for j in range(120):
+            sample, notused = EEG_inlet.pull_sample()
+            sample = np.transpose(sample)  #
+            samples.append(sample)
+            x.append((i+1)*j/120)
+        y = butter_bandpass_filter(np.transpose(samples[-120:]), 12, 30, 120, order=8)
+        y = list(y)
+        y = np.transpose(y)
+        for item in y:
+            filtered_samples.append(item)
+        #filtered_samples = np.squeeze(filtered_samples)
+        # REALTIME PLOT
+        plt.plot(x, filtered_samples)
+        if i < 5:
+            ymin = np.matrix(filtered_samples[:][0]).min()
+            ymax = np.matrix(filtered_samples).max()
+            print("ymin", ymin)
+            print("ymax", ymax)
+            plt.axis([x_axis_start, x_axis_end, ymin, ymax])
+        else:
+            ymin = np.matrix(filtered_samples[-120:][0]).min()
+            ymax = np.matrix(filtered_samples[-120:][0]).max()
+            print("ymin", ymin)
+            print("ymax", ymax)
+            print("filtered_samples", np.shape(filtered_samples[-120:][0]))
+            x_axis_start += 1
+            x_axis_end += 1
+            plt.axis([x_axis_start, x_axis_end, ymin, ymax])
+
+
+
+        # if np.shape(filtered_samples)[0] < 600:
+        #     print("EEEEEEEEEE")
+        #     # FOR ONLY ONE CHANNEL:
+        #     plt.plot(x, np.transpose(np.transpose(filtered_samples)[0]))
+        #     # FOR ALL CHANNELS:
+        #     # plt.plot(x, filtered_samples)
+        # else:
+        #     print("OOOOOOOOO")
+        #     # FOR ONLY ONE CHANNEL:
+        #     plt.plot(x[-600:],np.transpose(np.transpose(filtered_samples[-600:])[0]))
+        #     # FOR ALL CHANNELS:
+        #     # print("shape x plotted", np.shape(x[-600:]))
+        #     # print("shape y plotted", np.shape(filtered_samples[-600:]))
+        #     # plt.plot(x[-600:],filtered_samples[-600:])
+
+        plt.ylabel("EEG amplitude (mV)")
+        plt.xlabel("time (seconds)")
+        plt.title("Realtime EEG emulation")
+        plt.legend(labels, bbox_to_anchor=(1.0, 0.5), loc="center left")
+        plt.draw()
+        plt.pause(5/120)
+        i += 1
+        plt.clf()
+        # plt.clf()
+    '''
+
     '''
     ##PLOTTING EEG EMULATION##
     i = 0
@@ -322,8 +397,13 @@ def main():
         print("---Receiving EEG---")
         eeg, unused = receive_eeg(EEG_inlet, timeframe, datatype=datatype, overlap=overlap, eeg=eeg, channels=channels, normframe=timeframe)
 
-        # realtime EEG-plot:
+        print("main LINE 325")
 
+        # realtime EEG-plot:
+        # print("shape eeg", np.shape(eeg))
+        # plt.figure("EEG jwz")
+        # plt.plot(np.transpose(eeg))
+        # plt.show()
 
         # Classify eeg chunk into left or right attended speaker using CSP filters
         print("---Classifying---")
