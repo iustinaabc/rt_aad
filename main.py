@@ -389,13 +389,20 @@ def main():
     # print('left',scoreleft/20)
     # print('right',scoreright/20)
 
-    eeg = None
+    eeg_data = []
+    leftOrRight_data = []
     """ System Loop """
     print('---Starting the system---')
     while True:
         # Receive EEG from LSL
         print("---Receiving EEG---")
-        eeg, unused = receive_eeg(EEG_inlet, timeframe, datatype=datatype, overlap=overlap, eeg=eeg, channels=channels, normframe=timeframe)
+        timeframe = 5*120 #5 seconds
+        ##timeframe = 7200 => eeg_data [minutes, channels(24), trials(7200)]
+        #timeframe = 120 => eeg_data [seconds, channels(24), trials(120)]
+        eeg, unused = receive_eeg(EEG_inlet, timeframe, datatype=datatype, overlap=overlap, channels=channels)
+        eeg_data.append(eeg)
+
+        print("shape eeg_data", np.shape(eeg_data))
 
         print("main LINE 325")
 
@@ -407,8 +414,9 @@ def main():
 
         # Classify eeg chunk into left or right attended speaker using CSP filters
         print("---Classifying---")
-        # previousLeftOrRight = leftOrRight
+        #previousLeftOrRight = leftOrRight
         leftOrRight, feat = classifier(eeg, CSP, coef, b, fs=samplingFrequency)
+        leftOrRight_data.append(leftOrRight)
 
         print("left" if leftOrRight == -1. else "right")
 
