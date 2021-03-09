@@ -115,9 +115,9 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
             eegTemp = eeg  #(24,7200,48) ---> (7200, 24, 48) ===== np.transpose(onze eeg)
             eeg = np.zeros((eeg.shape[0], len(params["filterbankBands"][0]), eeg.shape[1], eeg.shape[2]), dtype=np.float32)
             for band in range(len(params["filterbankBands"][0])):
-                b, a = scipy.signal.iirfilter(8, np.array(
+                lower, upper = scipy.signal.iirfilter(8, np.array(
                     [2 * params["filterbankBands"][0, band] / fs, 2 * params["filterbankBands"][1, band] / fs]))
-                eeg[:, band, :, :] = np.transpose(scipy.signal.filtfilt(b, a, np.transpose(eegTemp), axis=0))
+                eeg[:, band, :, :] = np.transpose(scipy.signal.filtfilt(lower, upper, np.transpose(eegTemp), axis=0))
                 # shape eeg: trials (14) x bands (1) x channels (24) x time (7200)
                 mean = np.average(eeg[:, band, :, :], 2) # shape: trials (14) x channels(24)
                 means = np.full((eeg.shape[3], eeg.shape[0], eeg.shape[2]), mean) # channels(24) x trials(14) x time(7200)
@@ -142,9 +142,9 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
         eegTemp = eeg
         eeg = np.zeros((eeg.shape[0], len(params["filterbankBands"][0]), eeg.shape[1]), dtype=np.float32)
         for band in range(len(params["filterbankBands"][0])):
-            b, a = scipy.signal.iirfilter(8, np.array(
+            lower, upper = scipy.signal.iirfilter(8, np.array(
                 [2 * params["filterbankBands"][0, band] / fs, 2 * params["filterbankBands"][1, band] / fs]))
-            eeg[:, band, :] = np.transpose(scipy.signal.filtfilt(b, a, np.transpose(eegTemp, (1, 0)), axis=0),
+            eeg[:, band, :] = np.transpose(scipy.signal.filtfilt(lower, upper, np.transpose(eegTemp, (1, 0)), axis=0),
                                               (1, 0))
             # eeg now has dimensions channels x time x trials
             mean = np.average(eeg[:, band, :], axis=1)[:, np.newaxis]
@@ -222,7 +222,7 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
     diff_mean = np.subtract(mean2, mean1)
     sum_mean = np.add(mean1, mean2)
     coef = np.transpose(np.dot(np.linalg.inv(S), diff_mean))
-    b = -0.5 * np.dot(coef, sum_mean)
+    b = -0.5 * np.matmul(coef, sum_mean)
 
     return CSP, coef, b
 

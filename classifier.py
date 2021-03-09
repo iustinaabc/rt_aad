@@ -1,6 +1,11 @@
 import numpy as np
 import scipy.signal
 
+def logenergy(y):
+    outputEnergyVector = np.zeros(len(y))
+    for i in range(len(y)):
+        outputEnergyVector[i] = sum(j**2 for j in y[i])
+    return np.log(outputEnergyVector)
 
 def classifier(eeg, CSP, coef, b, fs=250):
     """
@@ -26,36 +31,51 @@ def classifier(eeg, CSP, coef, b, fs=250):
     # filterbankBands = np.array([[1,2:2:26],[4:2:30]]), #first row: lower bound, second row: upper bound
     filterbankBands = np.array([[12], [30]])
 
-    """ Apply filterbank to incoming eeg """
-    eegTemp = eeg
-    eeg = np.zeros((eeg.shape[0], len(filterbankBands[0]), eeg.shape[1]))
-    for band in range(len(filterbankBands[0])):
-        denominator, numerator = scipy.signal.iirfilter(8, np.array(
-            [2 * filterbankBands[0, band] / fs, 2 * filterbankBands[1, band] / fs]))
+    # """ Apply filterbank to incoming eeg """
+    # eegTemp = eeg
+    # eeg = np.zeros((eeg.shape[0], len(filterbankBands[0]), eeg.shape[1]))
+    # for band in range(len(filterbankBands[0])):
+    #     denominator, numerator = scipy.signal.iirfilter(8, np.array(
+    #         [2 * filterbankBands[0, band] / fs, 2 * filterbankBands[1, band] / fs]))
+    #
+    #     eeg[:, band, :] = np.transpose(scipy.signal.filtfilt(denominator, numerator, np.transpose(eegTemp, (1, 0)),
+    #                                                          axis=0), (1, 0))
+    #     # # eeg now has dimensions channels x time
+    #     mean = np.average(eeg[:, band, :], axis=1)[:, np.newaxis]
+    #     eeg[:, band, :] = eeg[:, band, :] - mean
+    # del eegTemp
+    # X = eeg
 
-        eeg[:, band, :] = np.transpose(scipy.signal.filtfilt(denominator, numerator, np.transpose(eegTemp, (1, 0)),
-                                                             axis=0), (1, 0))
-        # # eeg now has dimensions channels x time
-        mean = np.average(eeg[:, band, :], axis=1)[:, np.newaxis]
-        eeg[:, band, :] = eeg[:, band, :] - mean
-    del eegTemp
-    X = eeg
-
-    """ Calculate output signal using CSP filters """
+    """ Calculating output signal and Feature vector using CSP filters """
     first = True
     for band in range(len(filterbankBands[0])):
         if first:
-            Y = np.matmul(np.transpose(CSP["W"][:, :, band]), np.squeeze(X[:, band, :]))
-            first = False
-        else:
-            Y = np.concatenate((Y, np.matmul(np.transpose(CSP["W"][:, :, band]), np.squeeze(X[:, band, :]))), axis=2)
+            # X: [bands 1, channels 24, time 600]
+            # W: [channels 24, spatial dim 6]
+            feat = []
+            Y = np.dot(np.transpose(CSP["W"]), np.squeeze(eeg[band, :, :]))
+            feat.append(logenergy(Y))
 
-    print(Y.shape)
-    """ Feature vector """
-    feat = np.log(np.var(Y, axis=1))
+            first = False
+            # Shape Y: [spatial dim 6, time 7200]
+        # if first:
+        #
+        #     Y = np.matmul(np.transpose(CSP["W"][:, :, band]), np.squeeze(eeg[:, band, :]))
+        #     first = False
+        else:
+            #Y = np.concatenate((Y, np.matmul(np.transpose(CSP["W"][:, :, band]), np.squeeze(eeg[:, band, :]))), axis=2)
+            feat_temp = []
+            Ytemp = np.dot(np.transpose(CSP["W"][:, :, band]), np.squeeze(eeg[band, :, :]))
+            feat_temp.append(logenergy(Ytemp))
+            feat = np.concatenate((feat, feat_temp))
+
+    # """ Feature vector """
+    #feat = np.log(np.var(Y, axis=1))
     # shape should be 6xtime
+
     """ Prediction """
-    print(np.matmul(feat, coef) + b)
+    #print(np.matmul(feat, coef) + b)
     leftOrRight = np.sign(np.matmul(feat, coef) + b)
+    #print("leftOrRight", leftOrRight)
 
     return leftOrRight, feat

@@ -48,8 +48,9 @@ def emulate():
             #24x1
             # now send it and wait for a bit
             outlet.push_sample(mysample)
-            # time.sleep(0.01)
+            time.sleep(0.00014)
         i += 1
         #mag dan waarschijnlijk nog weg:
-        if i == 48:
-            break
+        if i == 47:
+            #break
+            i = 0

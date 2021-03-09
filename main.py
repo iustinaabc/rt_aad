@@ -2,7 +2,7 @@
 
 # import os
 import numpy as np
-# import scipy
+import scipy
 import time
 import math
 # from audio import LRBalancer, AudioPlayer
@@ -45,8 +45,8 @@ def main():
     #data_subject = loadmat('dataSubject8.mat')
     #trainingDataset = np.squeeze(np.array(data_subject.get('eegTrials')))
     updateCSP = False  # Using subject specific CSP filters
-    updatecov = True  # Using subject specific covariance matrix
-    updatebias = True  # Using subject specific bias
+    updatecov = False  # Using subject specific covariance matrix
+    updatebias = False  # Using subject specific bias
     timeframeTraining = 180*samplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
     windowLengthTraining = 10  # timeframe for training is split into windows of windowlength * fs for lda calculation
     markers = np.array([1, 2])  # First Left, then Right; for training
@@ -393,33 +393,66 @@ def main():
     leftOrRight_data = []
     """ System Loop """
     print('---Starting the system---')
+    count = 0
+    plt.figure("EEG jwz")
+    labels = []
+    for nummers in range(1, 25):
+        labels.append('Channel ' + str(nummers))
     while True:
         # Receive EEG from LSL
-        print("---Receiving EEG---")
-        timeframe = 5*120 #5 seconds
+        #print("---Receiving EEG---")
+        timeframe = 7200 #5 seconds
         ##timeframe = 7200 => eeg_data [minutes, channels(24), trials(7200)]
         #timeframe = 120 => eeg_data [seconds, channels(24), trials(120)]
         eeg, unused = receive_eeg(EEG_inlet, timeframe, datatype=datatype, overlap=overlap, channels=channels)
-        eeg_data.append(eeg)
 
-        print("shape eeg_data", np.shape(eeg_data))
+        '''FILTERING'''
+        params = {# FILTERBANK SETUP
+            # "filterbankBands": np.array([[1,2:2:26],[4:2:30]]),  #first row: lower bound, second row: upper bound
+            "filterbankBands": np.array([[12], [30]])}
+        eegTemp = eeg  # nu afmetingen eeg: shape eeg (24, 5*120)
+        eeg = np.zeros((len(params["filterbankBands"][0]), np.shape(eeg)[0], np.shape(eeg)[1]), dtype=np.float32)
 
-        print("main LINE 325")
+        for band in range(len(params["filterbankBands"][0])):
+            lower, upper = scipy.signal.iirfilter(8, np.array([2 * params["filterbankBands"][0, band] / samplingFrequency,
+                                                       2 * params["filterbankBands"][1, band] / samplingFrequency]))
+            eeg[band, :, :] = np.transpose(scipy.signal.filtfilt(lower, upper, np.transpose(eegTemp), axis=0))
+            # shape eeg: bands (1) x channels (24) x time (7200)
+            mean = np.average(eeg[band, :, :], axis=1)  # shape: channels(24)
+            means = np.full((eeg.shape[2], eeg.shape[1]), mean)  # time(600) x channels(24)
+            means = np.transpose(means, (1, 0)) # channels(24) x time(600)
 
+            eeg[band, :, :] = eeg[band, :, :] - means  #(band(1)x) channels(24) x time(600)
+        del eegTemp
+        # save results
+        filtered_eeg = eeg
+        eeg_data.append(filtered_eeg)
+        timesamples = list(np.linspace(count, count+1, 7200))
         # realtime EEG-plot:
         # print("shape eeg", np.shape(eeg))
-        # plt.figure("EEG jwz")
-        # plt.plot(np.transpose(eeg))
-        # plt.show()
+        plt.plot(timesamples,np.transpose(filtered_eeg[0,:,:]))
+        plt.ylabel("EEG amplitude (mVolt)")
+        plt.xlabel("time (minutes)")
+        plt.title("Realtime EEG emulation")
+        plt.legend(labels, bbox_to_anchor=(1.0, 0.5), loc="center left")
+        plt.draw()
+        plt.pause(1/7200)
+        plt.clf()
+        #plt.close()
 
         # Classify eeg chunk into left or right attended speaker using CSP filters
-        print("---Classifying---")
+        "---Classifying---"
         #previousLeftOrRight = leftOrRight
-        leftOrRight, feat = classifier(eeg, CSP, coef, b, fs=samplingFrequency)
+        leftOrRight, feat = classifier(filtered_eeg, CSP, coef, b, fs=samplingFrequency)
         leftOrRight_data.append(leftOrRight)
 
-        print("left" if leftOrRight == -1. else "right")
+        print("[LEFT]" if leftOrRight == -1. else "[RIGHT]")
+        count += 1
+        print("count --- ", count)
 
+
+        if count == 48:
+            break
         # # Faded gain control towards left or right, stops when one channel falls below the volume threshold
         # # Validation: previous decision is the same as this one
         # print(lr_bal.get_volume())
