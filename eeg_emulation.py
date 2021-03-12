@@ -28,7 +28,7 @@ def emulate():
     outlet = StreamOutlet(info)
     # # case WINDOWS / IOS
     # DONE: change location eeg_left & right
-    data_subject = loadmat('dataSubject9.mat')
+    data_subject = loadmat('dataSubject8.mat')
     attended_ear = np.squeeze(np.array(data_subject.get('attendedEar')))
     eeg_data = np.squeeze(np.array(data_subject.get('eegTrials')))
     eeg_left, eeg_right = group_by_class(eeg_data, attended_ear)
@@ -48,7 +48,7 @@ def emulate():
             #24x1
             # now send it and wait for a bit
             outlet.push_sample(mysample)
-            time.sleep(0.00014)
+            time.sleep(1/240)
         i += 1
         #mag dan waarschijnlijk nog weg:
         if i == 47:

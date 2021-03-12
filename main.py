@@ -85,7 +85,6 @@ def main():
     # create a new inlet to read from the stream
     EEG_inlet = StreamInlet(streams[0])
 
-
     '''
     ##REALTIME EEG EMULATION PLOT##:
     plt.figure("Realtime EEG emulation")
@@ -95,7 +94,7 @@ def main():
     i = 0
 
     labels=[]
-    for nummers in range(1,25):
+    for nummers in range(1, 25):
         labels.append('Channel ' + str(nummers))
 
     while True:
@@ -108,23 +107,66 @@ def main():
 
         if len(samples) < 120:
             # FOR ONLY ONE CHANNEL:
-            #plt.plot(x, np.transpose(np.transpose(samples)[2]))
+            plt.plot(x, np.transpose(np.transpose(samples)[2]))
             # FOR ALL CHANNELS:
-            plt.plot(x, samples)
+            #plt.plot(x, samples)
         else:
             # FOR ONLY ONE CHANNEL:
-            # plt.plot(x[-120:],np.transpose(np.transpose(samples[-120:])[2]))
+            plt.plot(x[-120:],np.transpose(np.transpose(samples[-120:])[2]))
             # FOR ALL CHANNELS:
-            plt.plot(x[-120:],samples[-120:])
+            #plt.plot(x[-120:],samples[-120:])
         plt.ylabel("EEG amplitude (Volt)")
         plt.xlabel("time (seconds)")
         plt.title("Realtime EEG emulation")
         plt.legend(labels, bbox_to_anchor=(1.0, 0.5), loc="center left")
         plt.draw()
-        plt.pause(1/(120))
+        plt.pause(1/(240))
         i+=1
         plt.clf()
+
     '''
+
+    '''
+    ##REALTIME EEG EMULATION PLOT##:
+    plt.figure("Realtime EEG emulation")
+
+    x = []
+    samples = []
+    i = 0
+
+    labels=[]
+    for nummers in range(1, 25):
+        labels.append('Channel ' + str(nummers))
+
+    while True:
+        sample, notused = EEG_inlet.pull_sample()
+        sample = np.transpose(sample)  #
+        y = butter_bandpass_filter(sample, 12, 30, 120, order=8)
+        y = np.transpose(y)
+        x.append(float(i/120))
+        samples.append(y)
+
+        if len(samples) < 120:
+            # FOR ONLY ONE CHANNEL:
+            plt.plot(x, np.transpose(np.transpose(samples)[2]))
+            # FOR ALL CHANNELS:
+            #plt.plot(x, samples)
+        else:
+            # FOR ONLY ONE CHANNEL:
+            plt.plot(x[-120:],np.transpose(np.transpose(samples[-120:])[2]))
+            # FOR ALL CHANNELS:
+            #plt.plot(x[-120:],samples[-120:])
+        plt.ylabel("EEG amplitude (Volt)")
+        plt.xlabel("time (seconds)")
+        plt.title("Realtime EEG emulation")
+        plt.legend(labels, bbox_to_anchor=(1.0, 0.5), loc="center left")
+        plt.draw()
+        plt.pause(1/(240))
+        i+=1
+        plt.clf()
+        
+    '''
+
 
     ''' NOG AANPASSEN:
     
@@ -391,17 +433,19 @@ def main():
 
     eeg_data = []
     leftOrRight_data = []
+    eeg_plot =list()
     """ System Loop """
     print('---Starting the system---')
     count = 0
     plt.figure("EEG jwz")
     labels = []
+    first = True
     for nummers in range(1, 25):
         labels.append('Channel ' + str(nummers))
     while True:
         # Receive EEG from LSL
         #print("---Receiving EEG---")
-        timeframe = 7200 #5 seconds
+        timeframe = 120 #5 seconds
         ##timeframe = 7200 => eeg_data [minutes, channels(24), trials(7200)]
         #timeframe = 120 => eeg_data [seconds, channels(24), trials(120)]
         eeg, unused = receive_eeg(EEG_inlet, timeframe, datatype=datatype, overlap=overlap, channels=channels)
@@ -425,20 +469,38 @@ def main():
             eeg[band, :, :] = eeg[band, :, :] - means  #(band(1)x) channels(24) x time(600)
         del eegTemp
         # save results
+
         filtered_eeg = eeg
         eeg_data.append(filtered_eeg)
-        timesamples = list(np.linspace(count, count+1, 7200))
+        eeg_to_plot = eeg[0] # first frequencyband
+        # eeg_to_plot = eeg[0,4,:] # first frequency band & channel 5
+
+        if first:
+            eeg_plot = eeg_to_plot
+            first = False
+        else:
+            eeg_plot = np.concatenate((eeg_plot, eeg_to_plot), axis=1)
+
+        for channel in range(len(eeg_plot)):
+            eeg_plot[channel,-timeframe:]= np.add(eeg_plot[channel,-timeframe:], np.full((timeframe,), 20*(len(eeg_plot)-channel)))
+        eeg_plot = np.transpose(eeg_plot)
         # realtime EEG-plot:
-        # print("shape eeg", np.shape(eeg))
-        plt.plot(timesamples,np.transpose(filtered_eeg[0,:,:]))
-        plt.ylabel("EEG amplitude (mVolt)")
-        plt.xlabel("time (minutes)")
+        if len(eeg_plot) < 10*timeframe:
+            timesamples = list(np.linspace(0, count+1, (count+1)*timeframe))
+            plt.plot(timesamples,eeg_plot)
+        else:
+            timesamples = list(np.linspace(count-10, count, 10 * timeframe))
+            plt.plot(timesamples, eeg_plot[(-10*timeframe):])
+        plt.ylabel("EEG amplitude (mV)")
+        plt.xlabel("time (seconds)")
         plt.title("Realtime EEG emulation")
+        plt.axis([None, None, 0 ,500])
         plt.legend(labels, bbox_to_anchor=(1.0, 0.5), loc="center left")
         plt.draw()
-        plt.pause(1/7200)
+        plt.pause(1/120)
         plt.clf()
         #plt.close()
+        eeg_plot = np.transpose(eeg_plot)
 
         # Classify eeg chunk into left or right attended speaker using CSP filters
         "---Classifying---"
@@ -446,12 +508,16 @@ def main():
         leftOrRight, feat = classifier(filtered_eeg, CSP, coef, b, fs=samplingFrequency)
         leftOrRight_data.append(leftOrRight)
 
-        print("[LEFT]" if leftOrRight == -1. else "[RIGHT]")
-        count += 1
         print("count --- ", count)
+        if leftOrRight == -1.:
+            print("[LEFT]")
+            print(leftOrRight)
+        elif leftOrRight == 1.:
+            print("[RIGHT]")
+            print(leftOrRight)
+        count += 1
 
-
-        if count == 48:
+        if count == 48*60:
             break
         # # Faded gain control towards left or right, stops when one channel falls below the volume threshold
         # # Validation: previous decision is the same as this one
@@ -473,6 +539,6 @@ def main():
         #         print("Left Decrease")
         #         volLeft = volLeft - 5
         #         lr_bal.set_volume_left(volLeft)
-
+    print(leftOrRight_data)
 if __name__ == '__main__':
     main()
