@@ -11,6 +11,7 @@ from segment import segment
 import random
 from sklearn import covariance
 from group_by_class import group_by_class
+import matplotlib.pyplot as plt
 
 def logenergy(y):
     outputEnergyVector = np.zeros(len(y))
@@ -65,7 +66,7 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
         # PREPROCESSING
         "preprocessing": {
             "normalization": True,  # 1:with normalization of regression matrices (column-wise), 0:without normalization
-            "subset": 0.3,  # subset percentage to be taken from training subjects
+            "subset": 1,  # subset percentage to be taken from training subjects
             "rereference": "None",
             "eegChanSel": []
         },
@@ -94,7 +95,7 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
 
         if dataset == "dataSubject":
             # TODO: aanpassen zodat alle (consistente) subjects gebruikt worden voor training
-            trainingSet = set('8')
+            trainingSet = set('9')
 
         firstTrainingSubject = True
         print("Loading data other subjects")
@@ -102,9 +103,10 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
             [eeg, attendedEar, fs, trialLength] = loadData(dataset, sb, params["preprocessing"],
                                                               params["conditions"])
 
-            # Random subset in trial dimension
-            ind = random.choices(list(range(0, len(attendedEar))),
+            # Random subset in trial dimension without repetition of indices
+            ind = random.sample(list(range(0, len(attendedEar))),
                                  k=round(params["preprocessing"]["subset"] * len(attendedEar)))
+            print(ind, round(params["preprocessing"]["subset"] * len(attendedEar)))
             attendedEar = attendedEar[ind]
             eeg = eeg[ind, :, :]
 
@@ -213,6 +215,17 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
     f_in_classes = group_by_class(feat, attendedEar)
     mean1 = np.mean(f_in_classes[0], axis=0)
     mean2 = np.mean(f_in_classes[1], axis=0)
+    # ###plot training feauture###
+    # plt.figure()
+    # for i in range(np.shape(f_in_classes[0])[0]):
+    #     green_scat = plt.scatter(f_in_classes[0][i][0], f_in_classes[0][i][5], color='green', label='Training Class 1')
+    # for i in range(np.shape(f_in_classes[1])[0]):
+    #     red_scat = plt.scatter(f_in_classes[1][i][0], f_in_classes[1][i][5], color='red', label='Training Class 2')
+    # # plt.legend() #("Class 1", "Class 2"))
+    # plt.legend(handles=[green_scat, red_scat])
+    # plt.title("Training feature vectors of 1st and 6th dimension plotted in 2D")
+    # plt.show()
+    # plt.close()
 
     if params["cov"]["method"] == 'classic':
         S = np.cov(np.transpose(feat))
