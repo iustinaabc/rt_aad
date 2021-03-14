@@ -16,6 +16,7 @@ from scipy.io import loadmat
 import matplotlib.pyplot as plt
 # filter
 from scipy.signal import butter, lfilter
+from loadData import loadData
 
 def butter_bandpass(low_cut, high_cut, sampling_frequency, order):
     nyquist_frequency = 0.5 * sampling_frequency
@@ -315,7 +316,7 @@ def main():
     # print('right',scoreright/20)
 
     eeg_data = []
-    leftOrRight_data = []
+    leftOrRight_data = list()
     eeg_plot =list()
     """ System Loop """
     print('---Starting the system---')
@@ -328,7 +329,7 @@ def main():
     while True:
         # Receive EEG from LSL
         #print("---Receiving EEG---")
-        timeframe = 120 #5 seconds
+        timeframe = 7200 #5 seconds
         ##timeframe = 7200 => eeg_data [minutes, channels(24), trials(7200)]
         #timeframe = 120 => eeg_data [seconds, channels(24), trials(120)]
         eeg, unused = receive_eeg(EEG_inlet, timeframe, datatype=datatype, overlap=overlap, channels=channels)
@@ -375,7 +376,7 @@ def main():
             timesamples = list(np.linspace(count-10, count, 10 * timeframe))
             plt.plot(timesamples, eeg_plot[(-10*timeframe):])
         plt.ylabel("EEG amplitude (mV)")
-        plt.xlabel("time (seconds)")
+        plt.xlabel("time (MINUTES)")
         plt.title("Realtime EEG emulation")
         plt.axis([None, None, 0 ,500])
         plt.legend(labels, bbox_to_anchor=(1.0, 0.5), loc="center left")
@@ -387,7 +388,7 @@ def main():
         # Classify eeg chunk into left or right attended speaker using CSP filters
         "---Classifying---"
         leftOrRight, feat = classifier(filtered_eeg, CSP, coef, b, fs=samplingFrequency)
-        leftOrRight_data.append(leftOrRight)
+        leftOrRight_data.append(leftOrRight[0])
 
         print("count --- ", count)
         if leftOrRight == -1.:
@@ -398,7 +399,7 @@ def main():
             print(leftOrRight)
         count += 1
 
-        if count == 48*60:
+        if count == 12:
             break
         # # Faded gain control towards left or right, stops when one channel falls below the volume threshold
         # # Validation: previous decision is the same as this one
@@ -421,5 +422,8 @@ def main():
         #         volLeft = volLeft - 5
         #         lr_bal.set_volume_left(volLeft)
     print(leftOrRight_data)
+    # data = loadmat('dataSubject8.mat')
+    # attendedEar = np.squeeze(np.array(data.get('attendedEar')))
+    # print(attendedEar[:12])
 if __name__ == '__main__':
     main()
