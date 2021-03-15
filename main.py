@@ -329,7 +329,7 @@ def main():
     while True:
         # Receive EEG from LSL
         #print("---Receiving EEG---")
-        timeframe = 7200 #5 seconds
+        timeframe = 120 #5 seconds
         ##timeframe = 7200 => eeg_data [minutes, channels(24), trials(7200)]
         #timeframe = 120 => eeg_data [seconds, channels(24), trials(120)]
         eeg, unused = receive_eeg(EEG_inlet, timeframe, datatype=datatype, overlap=overlap, channels=channels)
@@ -376,7 +376,7 @@ def main():
             timesamples = list(np.linspace(count-10, count, 10 * timeframe))
             plt.plot(timesamples, eeg_plot[(-10*timeframe):])
         plt.ylabel("EEG amplitude (mV)")
-        plt.xlabel("time (MINUTES)")
+        plt.xlabel("time (seconds)")
         plt.title("Realtime EEG emulation")
         plt.axis([None, None, 0 ,500])
         plt.legend(labels, bbox_to_anchor=(1.0, 0.5), loc="center left")
