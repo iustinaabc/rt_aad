@@ -321,7 +321,7 @@ def main():
     """ System Loop """
     print('---Starting the system---')
     count = 0
-    plt.figure("EEG jwz")
+    plt.figure("Realtime EEG")
     labels = []
     first = True
     for nummers in range(1, 25):
