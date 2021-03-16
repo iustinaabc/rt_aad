@@ -399,10 +399,10 @@ def main():
         print("second --- ", count)
         if leftOrRight == -1.:
             print("[LEFT]")
-            print(leftOrRight)
+            #print(leftOrRight)
         elif leftOrRight == 1.:
             print("[RIGHT]")
-            print(leftOrRight)
+            #print(leftOrRight)
 
         if count%60 == 0:
             minute = round(count/60) +1
