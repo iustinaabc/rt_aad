@@ -329,77 +329,86 @@ def main():
     while True:
         # Receive EEG from LSL
         #print("---Receiving EEG---")
-        timeframe = 120 #5 seconds
+        timeframe_classifying = 15*samplingFrequency
+        timeframe_plot = samplingFrequency # seconds
         ##timeframe = 7200 => eeg_data [minutes, channels(24), trials(7200)]
         #timeframe = 120 => eeg_data [seconds, channels(24), trials(120)]
-        eeg, unused = receive_eeg(EEG_inlet, timeframe, datatype=datatype, overlap=overlap, channels=channels)
+        for second in range(round(timeframe_classifying/samplingFrequency)):
+            eeg, unused = receive_eeg(EEG_inlet, timeframe_plot, datatype=datatype, overlap=overlap, channels=channels)
 
-        '''FILTERING'''
-        params = {# FILTERBANK SETUP
-            # "filterbankBands": np.array([[1,2:2:26],[4:2:30]]),  #first row: lower bound, second row: upper bound
-            "filterbankBands": np.array([[12], [30]])}
-        eegTemp = eeg  # nu afmetingen eeg: shape eeg (24, 5*120)
-        eeg = np.zeros((len(params["filterbankBands"][0]), np.shape(eeg)[0], np.shape(eeg)[1]), dtype=np.float32)
+            '''FILTERING'''
+            params = {# FILTERBANK SETUP
+                # "filterbankBands": np.array([[1,2:2:26],[4:2:30]]),  #first row: lower bound, second row: upper bound
+                "filterbankBands": np.array([[12], [30]])}
+            eegTemp = eeg  # nu afmetingen eeg: shape eeg (24, 5*120)
+            eeg = np.zeros((len(params["filterbankBands"][0]), np.shape(eeg)[0], np.shape(eeg)[1]), dtype=np.float32)
 
-        for band in range(len(params["filterbankBands"][0])):
-            lower, upper = scipy.signal.iirfilter(8, np.array([2 * params["filterbankBands"][0, band] / samplingFrequency,
-                                                       2 * params["filterbankBands"][1, band] / samplingFrequency]))
-            eeg[band, :, :] = np.transpose(scipy.signal.filtfilt(lower, upper, np.transpose(eegTemp), axis=0))
-            # shape eeg: bands (1) x channels (24) x time (7200)
-            mean = np.average(eeg[band, :, :], axis=1)  # shape: channels(24)
-            means = np.full((eeg.shape[2], eeg.shape[1]), mean)  # time(600) x channels(24)
-            means = np.transpose(means, (1, 0)) # channels(24) x time(600)
+            for band in range(len(params["filterbankBands"][0])):
+                lower, upper = scipy.signal.iirfilter(8, np.array([2 * params["filterbankBands"][0, band] / samplingFrequency,
+                                                           2 * params["filterbankBands"][1, band] / samplingFrequency]))
+                eeg[band, :, :] = np.transpose(scipy.signal.filtfilt(lower, upper, np.transpose(eegTemp), axis=0))
+                # shape eeg: bands (1) x channels (24) x time (7200)
+                mean = np.average(eeg[band, :, :], axis=1)  # shape: channels(24)
+                means = np.full((eeg.shape[2], eeg.shape[1]), mean)  # time(600) x channels(24)
+                means = np.transpose(means, (1, 0)) # channels(24) x time(600)
 
-            eeg[band, :, :] = eeg[band, :, :] - means  #(band(1)x) channels(24) x time(600)
-        del eegTemp
-        # save results
+                eeg[band, :, :] = eeg[band, :, :] - means  #(band(1)x) channels(24) x time(600)
+            del eegTemp
+            # save results
 
-        filtered_eeg = eeg
-        eeg_data.append(filtered_eeg)
-        eeg_to_plot = eeg[0] # first frequencyband
-        # eeg_to_plot = eeg[0,4,:] # first frequency band & channel 5
+            filtered_eeg = eeg
+            eeg_data.append(filtered_eeg)
+            eeg_to_plot = eeg[0] # first frequencyband
+            # eeg_to_plot = eeg[0,4,:] # first frequency band & channel 5
 
-        if first:
-            eeg_plot = eeg_to_plot
-            first = False
-        else:
-            eeg_plot = np.concatenate((eeg_plot, eeg_to_plot), axis=1)
+            if first:
+                eeg_plot = eeg_to_plot
+                classify_eeg = filtered_eeg
+                first = False
+            else:
+                eeg_plot = np.concatenate((eeg_plot, eeg_to_plot), axis=1)
+                classify_eeg = np.concatenate((classify_eeg, filtered_eeg), axis=2)
 
-        for channel in range(len(eeg_plot)):
-            eeg_plot[channel,-timeframe:]= np.add(eeg_plot[channel,-timeframe:], np.full((timeframe,), 20*(len(eeg_plot)-channel)))
-        eeg_plot = np.transpose(eeg_plot)
-        # realtime EEG-plot:
-        if len(eeg_plot) < 10*timeframe:
-            timesamples = list(np.linspace(0, count+1, (count+1)*timeframe))
-            plt.plot(timesamples,eeg_plot)
-        else:
-            timesamples = list(np.linspace(count-10, count, 10 * timeframe))
-            plt.plot(timesamples, eeg_plot[(-10*timeframe):])
-        plt.ylabel("EEG amplitude (mV)")
-        plt.xlabel("time (seconds)")
-        plt.title("Realtime EEG emulation")
-        plt.axis([None, None, 0 ,500])
-        plt.legend(labels, bbox_to_anchor=(1.0, 0.5), loc="center left")
-        plt.draw()
-        plt.pause(1/120)
-        plt.clf()
-        eeg_plot = np.transpose(eeg_plot)
+            for channel in range(len(eeg_plot)):
+                eeg_plot[channel,-timeframe_plot:]= np.add(eeg_plot[channel,-timeframe_plot:], np.full((timeframe_plot,), 20*(len(eeg_plot)-channel)))
+            eeg_plot = np.transpose(eeg_plot)
+            # realtime EEG-plot:
+            if len(eeg_plot) < 5*timeframe_plot:
+                timesamples = list(np.linspace(0, count+1, (count+1)*timeframe_plot))
+                plt.plot(timesamples,eeg_plot)
+            else:
+                timesamples = list(np.linspace(count-5, count, 5 * timeframe_plot))
+                plt.plot(timesamples, eeg_plot[(-5*timeframe_plot):])
+            plt.ylabel("EEG amplitude (mV)")
+            plt.xlabel("time (seconds)")
+            plt.title("Realtime EEG emulation")
+            plt.axis([None, None, 0 ,500])
+            plt.legend(labels, bbox_to_anchor=(1.0, 0.5), loc="center left")
+            plt.draw()
+            plt.pause(1/120)
+            plt.clf()
+            eeg_plot = np.transpose(eeg_plot)
+            count += 1
 
         # Classify eeg chunk into left or right attended speaker using CSP filters
         "---Classifying---"
-        leftOrRight, feat = classifier(filtered_eeg, CSP, coef, b, fs=samplingFrequency)
+        classify_eeg = np.transpose((np.transpose(classify_eeg)[-timeframe_classifying:]))
+        leftOrRight, feat = classifier(classify_eeg, CSP, coef, b, fs=samplingFrequency)
         leftOrRight_data.append(leftOrRight[0])
 
-        print("count --- ", count)
+        print("second --- ", count)
         if leftOrRight == -1.:
             print("[LEFT]")
             print(leftOrRight)
         elif leftOrRight == 1.:
             print("[RIGHT]")
             print(leftOrRight)
-        count += 1
 
-        if count == 12:
+        if count%60 == 0:
+            minute = round(count/60) +1
+            print("------  MINUTE ", str(minute), " -------" )
+
+        if count == 12*60:
             break
         # # Faded gain control towards left or right, stops when one channel falls below the volume threshold
         # # Validation: previous decision is the same as this one
