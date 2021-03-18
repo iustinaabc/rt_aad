@@ -23,12 +23,12 @@ def emulate():
     # could also omit it but interrupted connections wouldn't auto-recover)
     info = StreamInfo('BioSemi', 'EEG', 24, 120, 'float32', 'myuid34234')
     
-    i = 0
+    i = 36
     # next make an outlet
     outlet = StreamOutlet(info)
     # # case WINDOWS / IOS
     # DONE: change location eeg_left & right
-    data_subject = loadmat('dataSubject8.mat')
+    data_subject = loadmat('dataSubject10.mat')
     attended_ear = np.squeeze(np.array(data_subject.get('attendedEar')))
     eeg_data = np.squeeze(np.array(data_subject.get('eegTrials')))
     eeg_left, eeg_right = group_by_class(eeg_data, attended_ear)
