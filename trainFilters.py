@@ -95,7 +95,7 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
 
         if dataset == "dataSubject":
             # TODO: aanpassen zodat alle (consistente) subjects gebruikt worden voor training
-            trainingSet = set(['10'])
+            trainingSet = set(['8'])
 
         firstTrainingSubject = True
         print("Loading data other subjects")
@@ -104,12 +104,12 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
                                                               params["conditions"])
 
             # Random subset in trial dimension without repetition of indices
-            # ind = random.sample(list(range(0, len(attendedEar))),
-            #                      k=round(params["preprocessing"]["subset"] * len(attendedEar)))
-            # attendedEar = attendedEar[ind]
-            # eeg = eeg[ind, :, :]
-            attendedEar = attendedEar[:36]
-            eeg = eeg[:36, :, :]
+            ind = random.sample(list(range(0, len(attendedEar))),
+                                 k=round(params["preprocessing"]["subset"] * len(attendedEar)))
+            attendedEar = attendedEar[ind]
+            eeg = eeg[ind, :, :]
+            # attendedEar = attendedEar[:36]
+            # eeg = eeg[:36, :, :]
 
             # apply FB
             #eerst afmetingen: shape eeg (24, 7200, 48)
