@@ -76,19 +76,19 @@ def loadData(dataset,number,preprocessing,varargin):
         fs = 120
         trialLength = fs*60
 
-        if varargin is None:
-            conditions = 'all'
-        else:
-            conditions = varargin[0]
-
-        if conditions == "dry":
-            indices = np.where(cond == 0)
-            data["eegTrials"] = data["eegTrials"][indices]
-            attendedEar = data["attendedEar"][indices]
-        if conditions == "hrtf":
-            indices = np.where(cond == 1)
-            data["eegTrials"] = data["eegTrials"][indices]
-            attendedEar = data["attendedEar"][indices]
+        # if varargin is None:
+        #     conditions = 'all'
+        # else:
+        #     conditions = varargin[0]
+        #
+        # if conditions == "dry":
+        #     indices = np.where(cond == 0)
+        #     data["eegTrials"] = data["eegTrials"][indices]
+        #     attendedEar = data["attendedEar"][indices]
+        # if conditions == "hrtf":
+        #     indices = np.where(cond == 1)
+        #     data["eegTrials"] = data["eegTrials"][indices]
+        #     attendedEar = data["attendedEar"][indices]
 
         # eegTrials is list of cells (trials with dimension time x channel)
         # Convert to numpy array with dimensions trial(48) x channel(24) x time(7200)

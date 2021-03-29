@@ -329,7 +329,7 @@ def main():
     while True:
         # Receive EEG from LSL
         #print("---Receiving EEG---")
-        timeframe_classifying = 15*samplingFrequency
+        timeframe_classifying = 10*samplingFrequency
         timeframe_plot = samplingFrequency # seconds
         ##timeframe = 7200 => eeg_data [minutes, channels(24), trials(7200)]
         #timeframe = 120 => eeg_data [seconds, channels(24), trials(120)]

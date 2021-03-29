@@ -104,12 +104,16 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
                                                               params["conditions"])
 
             # Random subset in trial dimension without repetition of indices
-            ind = random.sample(list(range(0, len(attendedEar))),
-                                 k=round(params["preprocessing"]["subset"] * len(attendedEar)))
-            attendedEar = attendedEar[ind]
-            eeg = eeg[ind, :, :]
-            # attendedEar = attendedEar[:36]
-            # eeg = eeg[:36, :, :]
+            # ind = random.sample(list(range(0, len(attendedEar))),
+            #                      k=round(params["preprocessing"]["subset"] * len(attendedEar)))
+            # attendedEar = attendedEar[ind]
+            # eeg = eeg[ind, :, :]
+            #TRAINING WITH FIRST 36 MINUTES
+            attendedEar = attendedEar[:36]
+            eeg = eeg[:36, :, :]
+
+            remove_index = np.arange(fs)
+            eeg = np.delete(eeg,remove_index,axis=2)
 
             # apply FB
             #eerst afmetingen: shape eeg (24, 7200, 48)
@@ -167,11 +171,40 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
 
     """TRAIN CSP FILTERS"""
     print("---Training CSP---")
-
-    first = True
+    firstBand = True
+    firstEEG = True
     CSP = dict()
     for band in range(0, len(params["filterbankBands"][0])):
         Xtrain = X[:, band, :, :]
+
+        #PLOT EEG DATA:
+        # print('shape Xtrain', np.shape(Xtrain))
+        # plt.figure('Filtered EEG trainingdata plot')
+        # # plt.plot(np.transpose(Xplot)[100:])
+        # channel = 0
+        # #EEG_data_plot = np.transpose(np.transpose(Xtrain[0])[100:])
+        # for minute in Xtrain:
+        #     newdata = np.transpose(minute)  # rows = 7200 , columns = 24 channels
+        #     if firstEEG:
+        #         EEG_data_plot = newdata
+        #         firstEEG = False
+        #     else:
+        #         EEG_data_plot = np.concatenate((EEG_data_plot, newdata), axis=0)
+        # EEG_data_plot = np.transpose(EEG_data_plot)
+        # print("shape EEG_data_plot", np.shape(EEG_data_plot) )
+        # #EEG_data_plot = Xtrain[0]
+        # while channel < 24:
+        #     EEG_data_plot[channel] = np.add(EEG_data_plot[channel], np.full((np.shape(EEG_data_plot)[1],), channel * (-1000)))
+        #     channel += 1
+        # xaxis = np.linspace(0,np.shape(Xtrain)[0], np.shape(EEG_data_plot)[1])
+        # plt.plot(xaxis, np.transpose(EEG_data_plot), label='Filtered signal')
+        # plt.xlabel('Time (minutes)')
+        # # plt.hlines([-a, a], 0, T, linestyles='--')
+        # plt.grid(True)
+        # plt.axis('tight')
+        # # plt.savefig('pythonfilterOrde8')
+        # plt.show()
+
 
         # Covariance weighting
 
@@ -179,8 +212,7 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
         # train CSP filter
         [W, score, traceratio] = trainCSP(Xtrain, labels, params["csp"]["spatial_dim"], params["csp"]["optmode"],
                                                    params["cov"]["method"])
-
-        if first:
+        if firstBand:
             CSP["W"] = W
             CSP["score"] = score
             CSP["traceratio"] = traceratio
@@ -191,7 +223,7 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
                 Y = np.dot(np.transpose(CSP["W"]), np.squeeze(X[trial, band, :, :]))
                 feat.append(logenergy(Y))
 
-            first = False
+            firstBand = False
             # Shape Y: [trials 14, spatial dim 6, time 7200]
 
         # TODO: Work on multiple bands

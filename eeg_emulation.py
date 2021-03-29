@@ -22,8 +22,11 @@ def emulate():
     # less locally unique identifier for the stream as far as available (you
     # could also omit it but interrupted connections wouldn't auto-recover)
     info = StreamInfo('BioSemi', 'EEG', 24, 120, 'float32', 'myuid34234')
-    
-    i = 0
+
+    #i = 0
+    #using last 12 minutes for testing:
+    i = 36
+
     # next make an outlet
     outlet = StreamOutlet(info)
     # # case WINDOWS / IOS
