@@ -10,6 +10,7 @@ from group_by_class import group_by_class
 import scipy.linalg as la
 from sklearn import covariance
 
+
 def CSP(class_covariances, size):
     # Solve the generalized eigenvalue problem resulting in eigenvalues and corresponding eigenvectors and
     # sort them in descending order.

@@ -1,249 +1,107 @@
 #!/usr/bin/env python3
 
-# import os
+import matplotlib.pyplot as plt
+import multiprocessing
 import numpy as np
 import scipy
 import time
 import math
-# from audio import LRBalancer, AudioPlayer
-from classifier import classifier
-from receive_eeg import receive_eeg
-from trainFilters import trainFilters
+import os
+
 from pylsl import StreamInlet, resolve_stream, local_clock
-import multiprocessing
+# from audio import LRBalancer, AudioPlayer
+from trainFilters import trainFilters
+from receive_eeg import receive_eeg
 from eeg_emulation import emulate
+from classifier import classifier
 from scipy.io import loadmat
-import matplotlib.pyplot as plt
-# filter
-from scipy.signal import butter, lfilter
 from loadData import loadData
 
-def butter_bandpass(low_cut, high_cut, sampling_frequency, order):
-    nyquist_frequency = 0.5 * sampling_frequency
-    low = low_cut / nyquist_frequency
-    high = high_cut / nyquist_frequency
-    b, a = butter(order, [low, high], btype='band')  # IIR filter constants
-    return b, a
+PARAMETERS = {"datatype": np.float32, "samplingFrequency": 120, "channels": 24,
+              "timeframe": 7200, "overlap": 0, "trainingDataset": "dataSubject",
+              "updateCSP": False, "updateCov": False, "updateBias": False,
+              "windowLengthTraining": 10, "location_eeg1": "/home/rtaad/Desktop/eeg1.npy",
+              "location_eeg2": "/home/rtaad/Desktop/eeg2.npy", "dumpTrainingData": False}
 
 
-# Applies a bandpass filter to given data.
-def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
-    b, a = butter_bandpass(lowcut, highcut, fs, order=order)
-    y = lfilter(b, a, data)
-    return y
+def main(parameters):
 
+    # Parameter initialisation.
+    # TODO: which parameters are (un)necessary?
+    print(parameters)
+    datatype = parameters["datatype"]  # ???
+    samplingFrequency = parameters["samplingFrequency"]  # Sampling frequency in Hertz.
+    channels = parameters["channels"]  # Number of electrodes on the EEG-cap.
+    timeframe = parameters["timeframe"] # in samples (timeframe 7200 / samplingFrequency 120 = time in seconds = 60s)
+    overlap = parameters["overlap"]  # in samples
+    trainingDataset = parameters["trainingDataset"]  # File containing training data.
+    updateCSP = parameters["updateCSP"]  # Using subject specific CSP filters
+    updateCov = parameters["updateCov"]  # Using subject specific covariance matrix
+    updateBias = parameters["updateBias"]  # Using subject specific bias
+    windowLengthTraining = parameters["windowLengthTraining"]  # timeframe for training is split into windows of windowlength * fs for lda calculation
+    location_eeg1 = parameters["location_eeg1"]
+    location_eeg2 = parameters["location_eeg2"]
+    dumpTrainingData = parameters["dumpTrainingData"]
 
-def main():
-    # Parameters
-    datatype = np.float32
-    samplingFrequency = 120  # Hz
-    channels = 24  # Channels on the EEG cap
-
-    timeframe = 7200  # in samples (timeframe 7200 / samplingFrequency 120 = time in seconds = 60s)
-    overlap = 0  # in samples
-
-    trainingDataset = 'dataSubject'
-    #data_subject = loadmat('dataSubject8.mat')
-    #trainingDataset = np.squeeze(np.array(data_subject.get('eegTrials')))
-    updateCSP = False  # Using subject specific CSP filters
-    updatecov = False  # Using subject specific covariance matrix
-    updatebias = False  # Using subject specific bias
-    timeframeTraining = 180*samplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
-    windowLengthTraining = 10  # timeframe for training is split into windows of windowlength * fs for lda calculation
+    # Parameters that don't change.
     markers = np.array([1, 2])  # First Left, then Right; for training
+    timeframeTraining = 180*samplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
 
-    #Where to store eeg data in case of subject specific filtertraining:
-    location_eeg1 = '/home/rtaad/Desktop/eeg1.npy'
-    location_eeg2 = '/home/rtaad/Desktop/eeg2.npy'
-
+    # TODO: unimplemented parameters.
     # stimulusReconstruction = False  # Use of stimulus reconstruction
-
     # volumeThreshold = 50  # in percentage
     # volLeft = 100  # Starting volume in percentage
     # volRight = 100  # Starting volume in percentage
+    # data_subject = loadmat('dataSubject8.mat')
+    # trainingDataset = np.squeeze(np.array(data_subject.get('eegTrials')))
+    # Where to store eeg data in case of subject specific filtertraining:
 
-    dumpTrainingData = False
-
-    # TODO: split eegdata in left and right -> location (in file eeg_emulation)
-    # !! Verify used OS in eeg_emulation
-    """ SET-UP Emulator """
+    # TODO: split eeg_data in left and right -> location (in file eeg_emulation)
+    # TODO: this emulator code is not used yet.
+    # !! Verify used OS in eeg_emulation??? Start the emulator.
     eeg_emulator = multiprocessing.Process(target=emulate)
     eeg_emulator.daemon = True
     time.sleep(5)
     eeg_emulator.start()
 
-
-    """ SET-UP Initialize variables """
+    # TODO: decent documentation; all info can be found in
+    #  https://www.downloads.plux.info/OpenSignals/OpenSignals%20LSL%20Manual.pdf
     leftOrRight = None
     eeg = None
-
-    """ SET-UP LSL Streams """
-    # resolve an EEG stream on the lab network
+    # SET-UP LSL Streams + resolve an EEG stream on the lab network
     print("looking for an EEG stream... ")
     streams = resolve_stream('type', 'EEG')
     print("[STREAM FOUND]")
-
     # create a new inlet to read from the stream
     EEG_inlet = StreamInlet(streams[0])
 
+    # TODO: unfinished sound code was moved from here to file "Sound".
+    # sound()?
 
-    '''
-    ##PLOTTING EEG EMULATION##
-    i = 0
-    samples = []
-    timesamples = list(np.linspace(0, 1, 120))
-
-    labels=[]
-    for nummers in range(1,25):
-        labels.append('Channel ' + str(nummers))
-
-    while True:
-        sample, notused = EEG_inlet.pull_sample()
-        # print(timestamp)
-        sample = np.transpose(sample)  # rows = 24 channels , columns = 7200 time instances
-        y = butter_bandpass_filter(sample, 12, 30, 120, order=8)
-        y = np.transpose(y)
-        samples.append(y)
-        i += 1
-        if i == 7200:
-            break
-    samples = samples[200:320] # 120 x 24
-    plt.figure("EEG emulation, for all channels")
-    plt.title("EEG emulation, for all channels")
-    plt.plot(timesamples, samples)
-    plt.ylabel("EEG amplitude (Volt)")
-    plt.xlabel("time (seconds)")
-    plt.legend(labels, bbox_to_anchor=(1.0, 0.5), loc="center left")
-    plt.show()
-    plt.close()
-    ### from this point errors, because of the transposes:
-    samples = np.transpose(samples)
-    for i in range(24):
-        mean = np.mean(samples[i])
-        for j in range(120):
-            samples[i][j] = samples[i][j]-mean
-    plt.figure("EEG emulation, for channels 1 to 6 - MEAN ")
-    plt.title("EEG emulation, for channels 1 to 6 minus DC-value")
-    plt.plot(timesamples, np.transpose(samples[:6]))
-    plt.ylabel("EEG amplitude (Volt)")
-    plt.xlabel("time (seconds)")
-    plt.legend(labels[:6], bbox_to_anchor=(1.0, 0.5), loc="center left")
-    plt.show()
-    plt.close()
-    plt.figure("EEG emulation, for channel 7 to 12")
-    plt.title("EEG emulation, for channel 7 to 12")
-    plt.plot(timesamples, np.transpose(samples[6:12]))
-    plt.ylabel("EEG amplitude (Volt)")
-    plt.xlabel("time (seconds)")
-    plt.legend(labels[6:12], bbox_to_anchor=(1.0, 0.5), loc="center left")
-    plt.show()
-    plt.close()
-    plt.figure("EEG emulation, for channel 13 to 18")
-    plt.title("EEG emulation, for channel 13 to 18")
-    plt.plot(timesamples, np.transpose(samples[13:18]))
-    plt.ylabel("EEG amplitude (Volt)")
-    plt.xlabel("time (seconds)")
-    plt.legend(labels[13:18], bbox_to_anchor=(1.0, 0.5), loc="center left")
-    plt.show()
-    plt.close()
-    plt.figure("EEG emulation, for channel 19 to 24")
-    plt.title("EEG emulation, for channel 19 to 24")
-    plt.plot(timesamples, np.transpose(samples[19:24]))
-    plt.ylabel("EEG amplitude (Volt)")
-    plt.xlabel("time (seconds)")
-    plt.legend(labels[19:24], bbox_to_anchor=(1.0, 0.5), loc="center left")
-    plt.show()
-    plt.close()
-    '''
-    '''
-    ##REALTIME EEG EMULATION PLOT##:
-    plt.figure("Realtime EEG emulation")
-
-    x = []
-    samples = []
-    i = 0
-
-    labels=[]
-    for nummers in range(1, 25):
-        labels.append('Channel ' + str(nummers))
-
-    while True:
-        sample, notused = EEG_inlet.pull_sample()
-        sample = np.transpose(sample)  #
-        y = butter_bandpass_filter(sample, 12, 30, 120, order=8)
-        y = np.transpose(y)
-        x.append(float(i/120))
-        samples.append(y)
-
-        if len(samples) < 120:
-            # FOR ONLY ONE CHANNEL:
-            plt.plot(x, np.transpose(np.transpose(samples)[2]))
-            # FOR ALL CHANNELS:
-            #plt.plot(x, samples)
-        else:
-            # FOR ONLY ONE CHANNEL:
-            plt.plot(x[-120:],np.transpose(np.transpose(samples[-120:])[2]))
-            # FOR ALL CHANNELS:
-            #plt.plot(x[-120:],samples[-120:])
-        plt.ylabel("EEG amplitude (Volt)")
-        plt.xlabel("time (seconds)")
-        plt.title("Realtime EEG emulation")
-        plt.legend(labels, bbox_to_anchor=(1.0, 0.5), loc="center left")
-        plt.draw()
-        plt.pause(1/(240))
-        i+=1
-        plt.clf()
-
-    '''
-
-    # TODO: these are the ALSA related sound settings, to be replaced with
-    # by your own audio interface building block. Note that the volume
-    # controls are also ALSA specific, and need to be changed
-#    """ SET-UP Headphones """
-#    device_name = 'sysdefault'
-#    control_name = 'Headphone+LO'
-#    cardindex = 0
-#
-#    wav_fn = os.path.join(os.path.expanduser('~/Desktop'), 'Pilot_1.wav')
-#
-#    # Playback
-#    ap = AudioPlayer()
-#
-#    ap.set_device(device_name, cardindex)
-#    ap.init_play(wav_fn)
-#    ap.play()
-#
-#    # Audio Control
-#    lr_bal = LRBalancer()
-#    lr_bal.set_control(control_name, device_name, cardindex)
-#
-#    lr_bal.set_volume_left(volLeft)
-#    lr_bal.set_volume_right(volRight)
-
-    """ TRAINING OF THE FBCSP AND THE LDA SUBJECT INDEPENDENT OR SUBJECT SPECIFIC """
+    # Start CSP filter and LDA training for later classification.
     print("--- Training filters and LDA... ---")
-    if False in [updateCSP,updatecov,updatebias]:
-        # Train the CSP filters on dataset of other subjects (subject independent)
-        CSP, coef, b = trainFilters(trainingDataset)
-
-
+    if False in [updateCSP, updateCov, updateBias]:
+        CSP, coefficients, b = trainFilters(trainingDataset)  # Subject independent.
     else:
-        # Update the FBCSP and LDA on eeg of the subject (subject specific)
-
-        """ Receive the eeg used for training """
         print("Concentrate on the left speaker first", flush=True)
-        startleft = local_clock()
-        eeg1, timestamps1 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels, starttime=startleft+3, normframe=timeframe)
-        # ap.stop() # TODO: replace this with you own code to stop the audio player
-        
+        startLeft = local_clock()
+        eeg1, timestamps1 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels,
+                                        starttime=startLeft+3, normframe=timeframe)  # Subject dependent.
+        # TODO: replace this with you own code to stop the audio player
+        # ap.stop()
         if dumpTrainingData:
-            # DONE replace full path by a setable parameter
             np.save(location_eeg1, eeg1)
+
+        print("Concentrate on the right speaker now", flush=True)
+        startRight = local_clock()
+        eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels,
+                                        starttime=startRight+3, normframe=timeframe)
+        if dumpTrainingData:
+            np.save(location_eeg2, eeg2)
 
         # TODO: replace with your audio player code
         # ap = AudioPlayer()
-
-        # ap.set_device(device_name, cardindex)
+        # ap.set_device(device_name, cardIndex)
         # ap.init_play(wav_fn)
         # ap.play()
 
@@ -264,36 +122,29 @@ def main():
         #     temp = temp - mean
         #     eeg2[:,i*timeframe:(i+1)*timeframe] = temp
 
-        print("Concentrate on the right speaker now", flush=True)
-        startright = local_clock()
-
-        eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels, starttime=startright+3, normframe=timeframe)
-
-        if dumpTrainingData:
-            # DONE replace full path by a setable parameter
-            np.save(location_eeg2, eeg2)
-
         # TODO: better if functions take EEG1 and EEG2, rather than concatenating here
         eeg = np.concatenate((eeg1[:,15000:30000],eeg1[:,45000:],eeg2[:,15000:30000],eeg2[:,45000:]), axis=1)
-
         # Size of each of the two trials
         trialSize = math.floor(timeframeTraining)
         # Train FBCSP and LDA
-        CSPSS, coefSS, bSS, feat = trainFilters(usingDataset=False, eeg=eeg, markers=markers, trialSize=trialSize,
-                                          fs=samplingFrequency, windowLength=windowLengthTraining)
 
-        """ CSP training """
+        CSPSS, coefSS, bSS, feat = trainFilters(usingDataset=False, eeg=eeg, markers=markers,
+                                                trialSize=trialSize, fs=samplingFrequency,
+                                                windowLength=windowLengthTraining)
+
+        # Train the CSP.
         if updateCSP:
             CSP = CSPSS
 
-        """ LDA training """
-        if updatecov:
-            coef = coefSS
-        if updatebias:
+        # Train the LDA.
+        if updateCov:
+            coefficients = coefSS
+        if updateBias:
             b = bSS
             print(b)
-            print(coef)
+            print(coefficients)
 
+    # TODO: scoring system to evaluate decoders.
     # """Test on loaded data (temporary)"""
     # scoreleft = 0
     # scoreright = 0
@@ -315,9 +166,10 @@ def main():
     # print('left',scoreleft/20)
     # print('right',scoreright/20)
 
+    # TODO: dedicated plot function.
     eeg_data = []
     leftOrRight_data = list()
-    eeg_plot =list()
+    eeg_plot = list()
     """ System Loop """
     print('---Starting the system---')
     count = 0
@@ -393,7 +245,7 @@ def main():
         # Classify eeg chunk into left or right attended speaker using CSP filters
         "---Classifying---"
         classify_eeg = np.transpose((np.transpose(classify_eeg)[-timeframe_classifying:]))
-        leftOrRight, feat = classifier(classify_eeg, CSP, coef, b, fs=samplingFrequency)
+        leftOrRight, feat = classifier(classify_eeg, CSP, coefficients, b, fs=samplingFrequency)
         leftOrRight_data.append(leftOrRight[0])
 
         print("second --- ", count)
@@ -410,29 +262,12 @@ def main():
 
         if count == 12*60:
             break
-        # # Faded gain control towards left or right, stops when one channel falls below the volume threshold
-        # # Validation: previous decision is the same as this one
-        # print(lr_bal.get_volume())
-        # if all(np.array(lr_bal.get_volume()) > volumeThreshold) and previousLeftOrRight == leftOrRight:
-        #     print("---Controlling volume---")
-        #     if leftOrRight == -1.:
-        #         if volLeft != 100:
-        #             lr_bal.set_volume_left(100)
-        #             volLeft = 100
-        #         print("Right Decrease")
-        #         volRight = volRight - 5
-        #         lr_bal.set_volume_right(volRight)
-    
-        #     elif leftOrRight == 1.:
-        #         if volRight != 100:
-        #             lr_bal.set_volume_right(100)
-        #             volRight = 100
-        #         print("Left Decrease")
-        #         volLeft = volLeft - 5
-        #         lr_bal.set_volume_left(volLeft)
+
     print(leftOrRight_data)
     # data = loadmat('dataSubject8.mat')
     # attendedEar = np.squeeze(np.array(data.get('attendedEar')))
     # print(attendedEar[:12])
+
+    
 if __name__ == '__main__':
-    main()
+    main(PARAMETERS)

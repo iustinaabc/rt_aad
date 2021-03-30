@@ -1,11 +1,13 @@
 import matplotlib
 import tkinter as tk
+from tkinter import *
+import tkinter.filedialog
 import time
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 from tkinter import ttk
-matplotlib.use("TkAgg")
 
+matplotlib.use("TkAgg")
 
 largeFont = ("Verdana", 12)
 normalFont = ("Verdana", 10)
@@ -13,7 +15,6 @@ normalFont = ("Verdana", 10)
 
 # Display popups as mini tkinter instances, only destroyed on user interaction.
 def popupMessage(message):
-
     # Destroy popups.
     def leaveMini():
         popup.destroy()
@@ -24,8 +25,8 @@ def popupMessage(message):
     popup.wm_title("!")
     screenwidth = popup.winfo_screenwidth()
     screenheight = popup.winfo_screenheight()
-    x = (screenwidth/2) - (width/2)
-    y = (screenheight/2) - (height/2)
+    x = (screenwidth / 2) - (width / 2)
+    y = (screenheight / 2) - (height / 2)
     popup.geometry('%dx%d+%d+%d' % (width, height, x, y))
     label = ttk.Label(popup, text=message, font=normalFont)
     label.pack(side="top", fill="x", pady=10)
@@ -41,13 +42,13 @@ def selfDestructMessage(message, duration):
     popup = tk.Tk()
     screenwidth = popup.winfo_screenwidth()
     screenheight = popup.winfo_screenheight()
-    x = (screenwidth/2) - (width/2)
-    y = (screenheight/2) - (height/2)
+    x = (screenwidth / 2) - (width / 2)
+    y = (screenheight / 2) - (height / 2)
     popup.geometry('%dx%d+%d+%d' % (width, height, x, y))
     popup.wm_title("!")
     label = ttk.Label(popup, text=message, font=normalFont)
     label.pack(side="top", fill="x", pady=10)
-    popup.after(duration*1000, lambda: popup.destroy())
+    popup.after(duration * 1000, lambda: popup.destroy())
     popup.mainloop()
 
 
@@ -76,7 +77,7 @@ class GUIMain(tk.Tk):
 
         # Tuple containing all pages.
         self.frames = {}
-        for F in (StartPage, UserPage, ResearcherPage):
+        for F in (StartPage, UserPage, ResearcherPage, TrainingPage):
             frame = F(container, self)
             self.frames[F] = frame
 
@@ -105,6 +106,167 @@ class StartPage(tk.Frame):
         researcherButton = tk.Button(self, text="Researcher page",
                                      command=lambda: controller.show_frame(ResearcherPage))
         researcherButton.pack()
+
+        trainingButton = tk.Button(self, text="Training page",
+                                   command=lambda: controller.show_frame(TrainingPage))
+        trainingButton.pack()
+
+
+# Page for training models based on (pre)recorded data.
+class TrainingPage(tk.Frame):
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        self.parent = parent
+        self.widgets(controller)
+        self.rowconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1)
+        self.rowconfigure(2, weight=1)
+        self.rowconfigure(3, weight=1)
+        self.rowconfigure(4, weight=1)
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
+        self.columnconfigure(3, weight=1)
+        self.columnconfigure(4, weight=1)
+        self.columnconfigure(5, weight=1)
+
+    """ Ask the user for a file and store it as a variable. """
+    @staticmethod
+    def askDirectory(self, var):
+        direc = str(tk.filedialog.askdirectory()).replace("/", "\\")
+        if direc:
+            var.set(direc)
+
+    """ Convert binary boolean values to actual boolean values. """
+    def widgets(self, controller):
+        def trueFalse(var):
+            if var == 0:
+                return False
+            else:
+                return True
+
+        # Read user input values.
+        def collectParameters():
+            data = {}
+            datatype = datatypeEntry.get()
+            print("datatype: " + datatype)
+            data.__setitem__("datatype", datatype)
+            samplingFrequency = samplingFrequencyEntry.get()
+            print("samplingFrequency: " + samplingFrequency)
+            data.__setitem__("samplingFrequency", samplingFrequency)
+            channels = channelsEntry.get()
+            print("channels: " + channels)
+            data.__setitem__("channels", channels)
+            timeframe = timeframeEntry.get()
+            print("timeframe: " + timeframe)
+            data.__setitem__("timeframe", timeframe)
+            overlap = overlapEntry.get()
+            print("overlap: " + overlap)
+            data.__setitem__("overlap", overlap)
+            trainingDataset = trainingDatasetVar.get()
+            print("trainingDataset: " + str(trainingDataset))
+            data.__setitem__("trainingDataset", trainingDataset)
+            updateCSP = trueFalse(CSPCheck.get())
+            print("updateCSP: " + str(updateCSP))
+            data.__setitem__("updateCSP", updateCSP)
+            updateCov = trueFalse(CovCheck.get())
+            print("updateCov: " + str(updateCov))
+            data.__setitem__("updateCov", updateCov)
+            updateBias = trueFalse(BiasCheck.get())
+            print("updateBias: " + str(updateBias))
+            data.__setitem__("updateBias", updateBias)
+            windowLengthTraining = windowLengthTrainingEntry.get()
+            print("windowLengthTraining: " + windowLengthTraining)
+            data.__setitem__("windowLengthTraining", windowLengthTraining)
+            location_eeg1 = location_eeg1Var.get()
+            print("location_eeg1: " + str(location_eeg1))
+            data.__setitem__("location_eeg1", location_eeg1)
+            location_eeg2 = location_eeg2Var.get()
+            print("location_eeg2: " + str(location_eeg2))
+            data.__setitem__("location_eeg2", location_eeg2)
+            dumpTrainingData = trueFalse(dumpTrainingDataVar.get())
+            print("dumpTrainingData: " + str(dumpTrainingData))
+            data.__setitem__("dumpTrainingData", dumpTrainingData)
+            print("\r\n")
+            print(data)
+
+            #mainParameters = [datatype, samplingFrequency, channels, timeframe, overlap, trainingDataset, updateCSP,
+            #                  updateCov, updateBias, windowLengthTraining, location_eeg1, location_eeg2,
+            #                  dumpTrainingData, None, None]
+
+            return data
+
+        datatypeLabel = tk.Label(self, text="datatype:")
+        datatypeLabel.grid(row=0, column=0, sticky="nsew")
+        datatypeEntry = tk.Entry(self)
+        datatypeEntry.grid(row=0, column=1, sticky="nsew")
+        samplingFrequencyLabel = tk.Label(self, text="samplingFrequency:")
+        samplingFrequencyLabel.grid(row=0, column=2, sticky="nsew")
+        samplingFrequencyEntry = tk.Entry(self)
+        samplingFrequencyEntry.grid(row=0, column=3, sticky="nsew")
+        channelsLabel = tk.Label(self, text="channels:")
+        channelsLabel.grid(row=0, column=4, sticky="nsew")
+        channelsEntry = tk.Entry(self)
+        channelsEntry.grid(row=0, column=5, sticky="nsew")
+        timeframeLabel = tk.Label(self, text="timeframe:")
+        timeframeLabel.grid(row=1, column=0, sticky="nsew")
+        timeframeEntry = tk.Entry(self)
+        timeframeEntry.grid(row=1, column=1, sticky="nsew")
+        overlapLabel = tk.Label(self, text="overlap:")
+        overlapLabel.grid(row=1, column=2, sticky="nsew")
+        overlapEntry = tk.Entry(self)
+        overlapEntry.grid(row=1, column=3, sticky="nsew")
+        trainingDatasetLabel = tk.Label(self, text="trainingDataset:")
+        trainingDatasetLabel.grid(row=1, column=4, sticky="nsew")
+        trainingDatasetVar = StringVar()
+        trainingDatasetButton = tk.Button(self, text='Choose directory',
+                                          command=lambda: TrainingPage.askDirectory(self, trainingDatasetVar))
+        trainingDatasetButton.grid(row=1, column=5, sticky="nsew")
+        updateCSPLabel = tk.Label(self, text="updateCSP?")
+        updateCSPLabel.grid(row=2, column=0, sticky="nsew")
+        CSPCheck = tk.IntVar()
+        updateCSPCheck = tk.Checkbutton(self, variable=CSPCheck)
+        updateCSPCheck.grid(row=2, column=1, sticky="nsew")
+        updateCovLabel = tk.Label(self, text="updateCov?")
+        updateCovLabel.grid(row=2, column=2, sticky="nsew")
+        CovCheck = tk.IntVar()
+        updateCovCheck = tk.Checkbutton(self, variable=CovCheck)
+        updateCovCheck.grid(row=2, column=3, sticky="nsew")
+        updateBiasLabel = tk.Label(self, text="updateBias?")
+        updateBiasLabel.grid(row=2, column=4, sticky="nsew")
+        BiasCheck = tk.IntVar()
+        updateBiasCheck = tk.Checkbutton(self, variable=BiasCheck)
+        updateBiasCheck.grid(row=2, column=5, sticky="nsew")
+        windowLengthTrainingLabel = tk.Label(self, text="windowLengthTraining:")
+        windowLengthTrainingLabel.grid(row=3, column=0, sticky="nsew")
+        windowLengthTrainingEntry = tk.Entry(self)
+        windowLengthTrainingEntry.grid(row=3, column=1, sticky="nsew")
+        location_eeg1Label = tk.Label(self, text="EEG1 location:")
+        location_eeg1Label.grid(row=3, column=2, sticky="nsew")
+        location_eeg1Var = StringVar()
+        location_eeg1Button = tk.Button(self, text='EEG1',
+                                        command=lambda: TrainingPage.askDirectory(self, location_eeg1Var))
+        location_eeg1Button.grid(row=3, column=3, sticky="nsew")
+        location_eeg2Label = tk.Label(self, text="EEG2 location:")
+        location_eeg2Label.grid(row=3, column=4, sticky="nsew")
+        location_eeg2Var = StringVar()
+        location_eeg2Button = tk.Button(self, text='EEG2',
+                                        command=lambda: TrainingPage.askDirectory(self, location_eeg2Var))
+        location_eeg2Button.grid(row=3, column=5, sticky="nsew")
+        dumpTrainingDataLabel = tk.Label(self, text="dumpTrainingData?")
+        dumpTrainingDataLabel.grid(row=4, column=0, sticky="nsew")
+        dumpTrainingDataVar = tk.IntVar()
+        dumpTrainingDataCheck = tk.Checkbutton(self, variable=dumpTrainingDataVar)
+        dumpTrainingDataCheck.grid(row=4, column=1, sticky="nsew")
+        tempLabel1 = tk.Label(self, text="???")
+        tempLabel1.grid(row=4, column=2, sticky="nsew")
+        tempButton1 = tk.Button(self)
+        tempButton1.grid(row=4, column=3, sticky="nsew")
+        startLabel = tk.Label(self, text="Start training:")
+        startLabel.grid(row=4, column=4, sticky="nsew")
+        startButton = tk.Button(self, text="START", command=lambda: collectParameters())
+        startButton.grid(row=4, column=5, sticky="nsew")
 
 
 class UserPage(tk.Frame):
@@ -175,6 +337,8 @@ class ResearcherPage(tk.Frame):
         self.widgets(controller)
         # Scaling of relative weights of rows and columns.
         self.rowconfigure(0, weight=1)
+        self.rowconfigure(1, weight=5)
+        self.rowconfigure(2, weight=5)
         self.columnconfigure(1, weight=3)
         self.columnconfigure(0, weight=15)
 
@@ -197,19 +361,19 @@ class ResearcherPage(tk.Frame):
 
         canvas = FigureCanvasTkAgg(f, self)
         canvas.draw()
-        canvas.get_tk_widget().grid(row=1, column=0, sticky="nsew")
+        canvas.get_tk_widget().grid(row=2, column=0, sticky="nsew")
 
-        # Set up instructions for the user in repeating LEFT/RIGHT TIME format.
+        """ Set up instructions for the user in repeating LEFT/RIGHT TIME format. """
         def train():
             program = trainingEntryWidget.get()
             program = program.split()
             if not len(program) % 2 == 0:
                 print("Please input an even number of arguments")
-                Return
+                return
             for i in range(0, len(program), 2):
                 # Display popup with user command.
-                duration = int(program[i+1])
-                selfDestructMessage("Please focus " + str(program[i]) + " for " + str(program[i+1]) + " seconds",
+                duration = int(program[i + 1])
+                selfDestructMessage("Please focus " + str(program[i]) + " for " + str(program[i + 1]) + " seconds",
                                     duration)
 
         trainingEntryWidget = tk.Entry(self)
