@@ -15,7 +15,7 @@ from group_by_class import group_by_class
 from scipy.io import loadmat
 
 
-def emulate():
+def emulate(all=True, left=False):
     # first create a new stream info (here we set the name to BioSemi,
     # the content-type to EEG, 24 channels, 120 Hz, and float-valued data) The
     # last value would be the serial number of the device or some other more or
@@ -23,9 +23,8 @@ def emulate():
     # could also omit it but interrupted connections wouldn't auto-recover)
     info = StreamInfo('BioSemi', 'EEG', 24, 120, 'float32', 'myuid34234')
 
-    #i = 0
-    #using last 12 minutes for testing:
-    i = 36
+    i = 0
+    imax = i + 36
 
     # next make an outlet
     outlet = StreamOutlet(info)
@@ -35,25 +34,25 @@ def emulate():
     attended_ear = np.squeeze(np.array(data_subject.get('attendedEar')))
     eeg_data = np.squeeze(np.array(data_subject.get('eegTrials')))
     eeg_left, eeg_right = group_by_class(eeg_data, attended_ear)
-
-    # # case LINUX
-    # eeg_left = np.load('/home/rtaad/Desktop/left_eeg1.npy')
-    # eeg_right = np.load('/home/rtaad/Desktop/right_eeg1.npy')
+    eeg_left = np.transpose(eeg_left, (0, 2, 1))
+    eeg_right = np.transpose(eeg_right, (0, 2, 1))
+    if not all:
+        imax = 24
+        if left:
+            eeg_data = eeg_left
+        else:
+            eeg_data = eeg_right
 
     print("[EEG emulator sending data now]")
     while True:
+        print(i)
         for j in range(7200):
-            # make a new random 24-channel sample; this is converted into a
-            # pylsl.vectorf (the data type that is expected by push_sample)
-            # mysample = np.array(eeg_left)[i, :, j]
-            mysample = np.array(eeg_data)[i][j]
-            # mysample = eeg_left[:, int(i * 750):int((i + 1) * 750)]
-            # 24x1
-            # now send it and wait for a bit
+            # mysample = np.array(eeg_data)[i, :, j]
+            mysample = np.array(eeg_data)[i][j]  # 24x1
             outlet.push_sample(mysample)
             time.sleep(1/240)
         i += 1
         # mag dan waarschijnlijk nog weg:
-        if i == 47:
-            #break
-            i = 0
+        if i == imax:
+            break
+            # i = 0

@@ -19,9 +19,9 @@ from loadData import loadData
 
 PARAMETERS = {"datatype": np.float32, "samplingFrequency": 120, "channels": 24,
               "timeframe": 7200, "trainingDataset": "dataSubject",
-              "updateCSP": False, "updateCov": False, "updateBias": False,
+              "updateCSP": True, "updateCov": True, "updateBias": True,
               "windowLengthTraining": 10, "location_eeg1": "/home/rtaad/Desktop/eeg1.npy",
-              "location_eeg2": "/home/rtaad/Desktop/eeg2.npy", "dumpTrainingData": False}
+              "location_eeg2": "/home/rtaad/Desktop/eeg2.npy", "saveTrainingData": False}
 
 
 def main(parameters):
@@ -38,13 +38,20 @@ def main(parameters):
     updateCov = parameters["updateCov"]  # Using subject specific covariance matrix
     updateBias = parameters["updateBias"]  # Using subject specific bias
     windowLengthTraining = parameters["windowLengthTraining"]  # timeframe for training is split into windows of windowlength * fs for lda calculation
+
+    saveTrainingData = parameters["saveTrainingData"]
     location_eeg1 = parameters["location_eeg1"]
     location_eeg2 = parameters["location_eeg2"]
-    dumpTrainingData = parameters["dumpTrainingData"]
+
+    if saveTrainingData:  # als de data moet worden opgeslagen, vraag naar locatie voor opslag in GUI
+        # vraag naar locatie ee1 en eeg2
+        # location_eeg1 = parameters["location_eeg1"]
+        # location_eeg2 = parameters["location_eeg2"]
+        pass
 
     # Parameters that don't change.
     markers = np.array([1, 2])  # First Left, then Right; for training
-    timeframeTraining = 6*60*samplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
+    timeframeTraining = 60*samplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
 
     # TODO: unimplemented parameters.
     # stimulusReconstruction = False  # Use of stimulus reconstruction
@@ -55,50 +62,40 @@ def main(parameters):
     # trainingDataset = np.squeeze(np.array(data_subject.get('eegTrials')))
     # Where to store eeg data in case of subject specific filtertraining:
 
-    # TODO: split eeg_data in left and right -> location (in file eeg_emulation)
-    # TODO: this emulator code is not used yet.
-    # !! Verify used OS in eeg_emulation??? Start the emulator.
-    eeg_emulator = multiprocessing.Process(target=emulate)
-    eeg_emulator.daemon = True
-    time.sleep(5)
-    eeg_emulator.start()
-
-    # TODO: decent documentation; all info can be found in
-    #  https://www.downloads.plux.info/OpenSignals/OpenSignals%20LSL%20Manual.pdf
-    leftOrRight = None
-    eeg = None
-    # SET-UP LSL Streams + resolve an EEG stream on the lab network
-    print("looking for an EEG stream... ")
-    streams = resolve_stream('type', 'EEG')
-    print("[STREAM FOUND]")
-    # create a new inlet to read from the stream
-    EEG_inlet = StreamInlet(streams[0])
-
     # TODO: unfinished sound code was moved from here to file "Sound".
     # sound()?
 
     # Start CSP filter and LDA training for later classification.
     print("--- Training filters and LDA... ---")
-    if False in [updateCSP, updateCov, updateBias]: # Subject independent
+    if False in [updateCSP, updateCov, updateBias]:  # Subject independent
         CSP, coefficients, b = trainFilters(trainingDataset)
     else:  # Subject dependent.
         print("Concentrate on the left speaker first", flush=True)
         # TODO: start audio for training left ear
         startLeft = local_clock()
-        eeg1, timestamps1 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
-        # TODO: replace this with your own code to stop the audio player
+        EEG_inlet = start_emulate(all=False, left=True)
+        print(EEG_inlet)
+        for p in range(6):
+            tempeeg1, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
+            if p == 0:
+                eeg1 = tempeeg1
+            else:
+                eeg1 = np.concatenate(eeg1, tempeeg1, axis=2)
+                print(np.shape(eeg1))
+        # TODO: replace this with code to stop the audio player
         # ap.stop()
-        if dumpTrainingData:
+        if saveTrainingData:
             np.save(location_eeg1, eeg1)
 
         print("Concentrate on the right speaker now", flush=True)
         # TODO: start audio for training right ear
         startRight = local_clock()
+        EEG_inlet = start_emulate(all=False, left=False)
         eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
-        if dumpTrainingData:
+        if saveTrainingData:
             np.save(location_eeg2, eeg2)
 
-        # TODO: replace with your audio player code
+        # TODO: replace with audio player code
         # ap = AudioPlayer()
         # ap.set_device(device_name, cardIndex)
         # ap.init_play(wav_fn)
@@ -121,13 +118,11 @@ def main(parameters):
         #     temp = temp - mean
         #     eeg2[:,i*timeframe:(i+1)*timeframe] = temp
 
-        # TODO: better if functions take EEG1 and EEG2, rather than concatenating here
-        eeg = np.concatenate((eeg1[:,15000:30000],eeg1[:,45000:],eeg2[:,15000:30000],eeg2[:,45000:]), axis=1)
-        # Size of each of the two trials
-        trialSize = math.floor(timeframeTraining)
-        # Train FBCSP and LDA
+        # DONE: better if functions take EEG1 and EEG2, rather than concatenating here
+        trialSize = 12
 
-        CSPSS, coefSS, bSS, feat = trainFilters(usingDataset=False, eeg=eeg, markers=markers,
+        # Train FBCSP and LDA
+        CSPSS, coefSS, bSS, feat = trainFilters(usingDataset=False, eeg1=eeg1, eeg2=eeg2, markers=markers,
                                                 trialSize=trialSize, fs=samplingFrequency,
                                                 windowLength=windowLengthTraining)
 
@@ -175,6 +170,7 @@ def main(parameters):
     plt.figure("Realtime EEG")
     labels = []
     first = True
+    EEG_inlet = start_emulate()
     for nummers in range(1, 25):
         labels.append('Channel ' + str(nummers))
     while True:
@@ -182,13 +178,13 @@ def main(parameters):
         # print("---Receiving EEG---")
         timeframe_classifying = 10*samplingFrequency
         timeframe_plot = samplingFrequency  # seconds
-        ##timeframe = 7200 => eeg_data [minutes, channels(24), trials(7200)]
-        #timeframe = 120 => eeg_data [seconds, channels(24), trials(120)]
+        # # timeframe = 7200 => eeg_data [minutes, channels(24), trials(7200)]
+        # timeframe = 120 => eeg_data [seconds, channels(24), trials(120)]
         for second in range(round(timeframe_classifying/samplingFrequency)):
             eeg, unused = receive_eeg(EEG_inlet, timeframe_plot, datatype=datatype, channels=channels)
 
             '''FILTERING'''
-            params = {# FILTERBANK SETUP
+            params = {  # FILTERBANK SETUP
                 # "filterbankBands": np.array([[1,2:2:26],[4:2:30]]),  #first row: lower bound, second row: upper bound
                 "filterbankBands": np.array([[12], [30]])}
             eegTemp = eeg  # nu afmetingen eeg: shape eeg (24, 5*120)
@@ -267,6 +263,26 @@ def main(parameters):
     # attendedEar = np.squeeze(np.array(data.get('attendedEar')))
     # print(attendedEar[:12])
 
-    
+
+def start_emulate(all=True, left=False):
+    # TODO: split eeg_data in left and right -> location (in file eeg_emulation)
+    # TODO: this emulator code is not used yet.
+    # !! Verify used OS in eeg_emulation??? Start the emulator.
+    eeg_emulator = multiprocessing.Process(target=emulate(all, left))
+    eeg_emulator.daemon = True
+    time.sleep(5)
+    eeg_emulator.start()
+    # TODO: decent documentation; all info can be found in
+    #  https://www.downloads.plux.info/OpenSignals/OpenSignals%20LSL%20Manual.pdf
+    leftOrRight = None
+    eeg = None
+    # SET-UP LSL Streams + resolve an EEG stream on the lab network
+    print("looking for an EEG stream... ")
+    streams = resolve_stream('type', 'EEG')
+    print("[STREAM FOUND]")
+    # create a new inlet to read from the stream
+    return StreamInlet(streams[0])
+
+
 if __name__ == '__main__':
     main(PARAMETERS)
