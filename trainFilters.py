@@ -21,7 +21,7 @@ def logenergy(y):
     return np.log(outputEnergyVector)
 
 
-def trainFilters(dataset, usingDataset=True, eeg1=None, eeg2=None, markers=None, trialSize=None, fs=250, windowLength=None):
+def trainFilters(dataset="dataSubject", usingDataset=True, eeg1=None, eeg2=None, markers=None, trialSize=None, fs=250, windowLength=None):
     """
     Can be used both on a dataset to train Subject Independent filters and LDA as on Subject EEG recording to train
     Subject Specific filters and LDA
@@ -111,7 +111,7 @@ def trainFilters(dataset, usingDataset=True, eeg1=None, eeg2=None, markers=None,
             eeg = eeg[:36, :, :]
 
             remove_index = np.arange(fs)
-            eeg = np.delete(eeg,remove_index,axis=2)
+            eeg = np.delete(eeg, remove_index, axis=2)
 
             # apply FB
             # eerst afmetingen: shape eeg (24, 7200, 48)
@@ -139,6 +139,7 @@ def trainFilters(dataset, usingDataset=True, eeg1=None, eeg2=None, markers=None,
                 X = np.concatenate((X, eeg), axis=3)
                 labels = np.concatenate((labels, attendedEar))
 
+
     # TODO: subject specific case
     else:  # When the training data is subject specific and 2-dimensional in channels x time
 
@@ -149,7 +150,7 @@ def trainFilters(dataset, usingDataset=True, eeg1=None, eeg2=None, markers=None,
         left = True
         for eeg in all_eeg:
             eegTemp = eeg
-            eeg = np.zeros((eeg.shape[0], len(params["filterbankBands"][0]), eeg.shape[1]), dtype=np.float32)
+            eeg = np.zeros((eeg.shape[0], len(params["filterbankBands"][0]), eeg.shape[1], eeg.shape[2]), dtype=np.float32)
             for band in range(len(params["filterbankBands"][0])):
                 lower, upper = scipy.signal.iirfilter(8, np.array(
                     [2 * params["filterbankBands"][0, band] / fs, 2 * params["filterbankBands"][1, band] / fs]))
@@ -167,12 +168,7 @@ def trainFilters(dataset, usingDataset=True, eeg1=None, eeg2=None, markers=None,
                 X = eeg
                 left = False
             else:
-                X = np.concatenate((X, eeg), axis=3)
-
-        # # Segment the EEG recording into the separate trials with a specific class in markers
-        # X = X[:, :, :, np.newaxis]
-        # X = segment(X, trialSize)
-        # trialLength = trialSize
+                X = np.concatenate((X, eeg), axis=0)
 
     """TRAIN CSP FILTERS"""
     print("---Training CSP---")
@@ -181,38 +177,6 @@ def trainFilters(dataset, usingDataset=True, eeg1=None, eeg2=None, markers=None,
     CSP = dict()
     for band in range(0, len(params["filterbankBands"][0])):
         Xtrain = X[:, band, :, :]
-
-        #PLOT EEG DATA:
-        # print('shape Xtrain', np.shape(Xtrain))
-        # plt.figure('Filtered EEG trainingdata plot')
-        # # plt.plot(np.transpose(Xplot)[100:])
-        # channel = 0
-        # #EEG_data_plot = np.transpose(np.transpose(Xtrain[0])[100:])
-        # for minute in Xtrain:
-        #     newdata = np.transpose(minute)  # rows = 7200 , columns = 24 channels
-        #     if firstEEG:
-        #         EEG_data_plot = newdata
-        #         firstEEG = False
-        #     else:
-        #         EEG_data_plot = np.concatenate((EEG_data_plot, newdata), axis=0)
-        # EEG_data_plot = np.transpose(EEG_data_plot)
-        # print("shape EEG_data_plot", np.shape(EEG_data_plot) )
-        # #EEG_data_plot = Xtrain[0]
-        # while channel < 24:
-        #     EEG_data_plot[channel] = np.add(EEG_data_plot[channel], np.full((np.shape(EEG_data_plot)[1],), channel * (-1000)))
-        #     channel += 1
-        # xaxis = np.linspace(0,np.shape(Xtrain)[0], np.shape(EEG_data_plot)[1])
-        # plt.plot(xaxis, np.transpose(EEG_data_plot), label='Filtered signal')
-        # plt.xlabel('Time (minutes)')
-        # # plt.hlines([-a, a], 0, T, linestyles='--')
-        # plt.grid(True)
-        # plt.axis('tight')
-        # # plt.savefig('pythonfilterOrde8')
-        # plt.show()
-
-
-        # Covariance weighting
-
 
         # train CSP filter
         [W, score, traceratio] = trainCSP(Xtrain, labels, params["csp"]["spatial_dim"], params["csp"]["optmode"],
@@ -250,7 +214,7 @@ def trainFilters(dataset, usingDataset=True, eeg1=None, eeg2=None, markers=None,
 
     """CALCULATE THE COEFFICIENTS"""
 
-    f_in_classes = group_by_class(feat, attendedEar)
+    f_in_classes = group_by_class(feat, labels)
     mean1 = np.mean(f_in_classes[0], axis=0)
     mean2 = np.mean(f_in_classes[1], axis=0)
     # ###plot training feauture###

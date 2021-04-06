@@ -28,7 +28,6 @@ def emulate(all=True, left=False):
 
     # next make an outlet
     outlet = StreamOutlet(info)
-    # # case WINDOWS / IOS
     # DONE: change location eeg_left & right
     data_subject = loadmat('dataSubject8.mat')
     attended_ear = np.squeeze(np.array(data_subject.get('attendedEar')))
@@ -43,11 +42,8 @@ def emulate(all=True, left=False):
         else:
             eeg_data = eeg_right
 
-    print("[EEG emulator sending data now]")
     while True:
-        print(i)
         for j in range(7200):
-            # mysample = np.array(eeg_data)[i, :, j]
             mysample = np.array(eeg_data)[i][j]  # 24x1
             outlet.push_sample(mysample)
             time.sleep(1/240)
