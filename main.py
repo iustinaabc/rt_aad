@@ -18,7 +18,7 @@ from scipy.io import loadmat
 from loadData import loadData
 
 PARAMETERS = {"datatype": np.float32, "samplingFrequency": 120, "channels": 24,
-              "timeframe": 7200, "overlap": 0, "trainingDataset": "dataSubject",
+              "timeframe": 7200, "trainingDataset": "dataSubject",
               "updateCSP": False, "updateCov": False, "updateBias": False,
               "windowLengthTraining": 10, "location_eeg1": "/home/rtaad/Desktop/eeg1.npy",
               "location_eeg2": "/home/rtaad/Desktop/eeg2.npy", "dumpTrainingData": False}
@@ -32,8 +32,7 @@ def main(parameters):
     datatype = parameters["datatype"]  # ???
     samplingFrequency = parameters["samplingFrequency"]  # Sampling frequency in Hertz.
     channels = parameters["channels"]  # Number of electrodes on the EEG-cap.
-    timeframe = parameters["timeframe"] # in samples (timeframe 7200 / samplingFrequency 120 = time in seconds = 60s)
-    overlap = parameters["overlap"]  # in samples
+    timeframe = parameters["timeframe"]  # in samples (timeframe 7200 / samplingFrequency 120 = time in seconds = 60s)
     trainingDataset = parameters["trainingDataset"]  # File containing training data.
     updateCSP = parameters["updateCSP"]  # Using subject specific CSP filters
     updateCov = parameters["updateCov"]  # Using subject specific covariance matrix
@@ -45,7 +44,7 @@ def main(parameters):
 
     # Parameters that don't change.
     markers = np.array([1, 2])  # First Left, then Right; for training
-    timeframeTraining = 180*samplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
+    timeframeTraining = 6*60*samplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
 
     # TODO: unimplemented parameters.
     # stimulusReconstruction = False  # Use of stimulus reconstruction
@@ -80,22 +79,22 @@ def main(parameters):
 
     # Start CSP filter and LDA training for later classification.
     print("--- Training filters and LDA... ---")
-    if False in [updateCSP, updateCov, updateBias]:
-        CSP, coefficients, b = trainFilters(trainingDataset)  # Subject independent.
-    else:
+    if False in [updateCSP, updateCov, updateBias]: # Subject independent
+        CSP, coefficients, b = trainFilters(trainingDataset)
+    else:  # Subject dependent.
         print("Concentrate on the left speaker first", flush=True)
+        # TODO: start audio for training left ear
         startLeft = local_clock()
-        eeg1, timestamps1 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels,
-                                        starttime=startLeft+3, normframe=timeframe)  # Subject dependent.
-        # TODO: replace this with you own code to stop the audio player
+        eeg1, timestamps1 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
+        # TODO: replace this with your own code to stop the audio player
         # ap.stop()
         if dumpTrainingData:
             np.save(location_eeg1, eeg1)
 
         print("Concentrate on the right speaker now", flush=True)
+        # TODO: start audio for training right ear
         startRight = local_clock()
-        eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels,
-                                        starttime=startRight+3, normframe=timeframe)
+        eeg2, timestamps2 = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
         if dumpTrainingData:
             np.save(location_eeg2, eeg2)
 
@@ -180,13 +179,13 @@ def main(parameters):
         labels.append('Channel ' + str(nummers))
     while True:
         # Receive EEG from LSL
-        #print("---Receiving EEG---")
+        # print("---Receiving EEG---")
         timeframe_classifying = 10*samplingFrequency
-        timeframe_plot = samplingFrequency # seconds
+        timeframe_plot = samplingFrequency  # seconds
         ##timeframe = 7200 => eeg_data [minutes, channels(24), trials(7200)]
         #timeframe = 120 => eeg_data [seconds, channels(24), trials(120)]
         for second in range(round(timeframe_classifying/samplingFrequency)):
-            eeg, unused = receive_eeg(EEG_inlet, timeframe_plot, datatype=datatype, overlap=overlap, channels=channels)
+            eeg, unused = receive_eeg(EEG_inlet, timeframe_plot, datatype=datatype, channels=channels)
 
             '''FILTERING'''
             params = {# FILTERBANK SETUP

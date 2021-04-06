@@ -48,12 +48,12 @@ def emulate():
             # mysample = np.array(eeg_left)[i, :, j]
             mysample = np.array(eeg_data)[i][j]
             # mysample = eeg_left[:, int(i * 750):int((i + 1) * 750)]
-            #24x1
+            # 24x1
             # now send it and wait for a bit
             outlet.push_sample(mysample)
             time.sleep(1/240)
         i += 1
-        #mag dan waarschijnlijk nog weg:
+        # mag dan waarschijnlijk nog weg:
         if i == 47:
             #break
             i = 0

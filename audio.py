@@ -12,7 +12,7 @@ import multiprocessing
 import numpy as np
 
 import wave
-import pyalsaaudio as alsaaudio
+import pyalsaaudio as audio
 
 from pylsl import StreamInfo, StreamOutlet
 
@@ -23,7 +23,6 @@ class AudioPlayer:
 
     """ 
     An audio player class based on ALSA (Linux only).
-
     """
     def __init__(self):
         self._device = None # PCM playback device
@@ -32,14 +31,12 @@ class AudioPlayer:
         self._period_size = None # period size for playback
         self._marker_outlet = None
 
-
     def list_devices(self):
         """
         List the available ALSA playback devices.
 
         """
-        print(alsaaudio.pcms(alsaaudio.PCM_PLAYBACK))
-
+        print(audio.pcms(audio.PCM_PLAYBACK))
 
     def set_device(self, device_name, cardindex):
         """
@@ -51,10 +48,9 @@ class AudioPlayer:
             Name of playback device.
 
         """
-        self._device = alsaaudio.PCM(type=alsaaudio.PCM_PLAYBACK,
+        self._device = audio.PCM(type=audio.PCM_PLAYBACK,
                                      device=device_name,
                                      cardindex=cardindex)
-
 
     def init_play(self, wav_fn):
         """
@@ -76,14 +72,14 @@ class AudioPlayer:
 
         # 8bit is unsigned in wav files
         if self._wav_fh.getsampwidth() == 1:
-            self._device.setformat(alsaaudio.PCM_FORMAT_U8)
+            self._device.setformat(audio.PCM_FORMAT_U8)
         # otherwise we assume signed data, little endian
         elif self._wav_fh.getsampwidth() == 2:
-            self._device.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+            self._device.setformat(audio.PCM_FORMAT_S16_LE)
         elif self._wav_fh.getsampwidth() == 3:
-            self._device.setformat(alsaaudio.PCM_FORMAT_S24_3LE)
+            self._device.setformat(audio.PCM_FORMAT_S24_3LE)
         elif self._wav_fh.getsampwidth() == 4:
-            self._device.setformat(alsaaudio.PCM_FORMAT_S32_LE)
+            self._device.setformat(audio.PCM_FORMAT_S32_LE)
         else:
             raise ValueError('Unsupported format')
 
@@ -156,7 +152,7 @@ class LRBalancer:
             Device name for which to display the available controls.
 
         """
-        print(alsaaudio.mixers(device=device_name))
+        print(audio.mixers(device=device_name))
 
 
     def set_control(self, control_name, device_name, cardindex):
@@ -171,7 +167,7 @@ class LRBalancer:
             Name of the device to control.
 
         """
-        self.control = alsaaudio.Mixer(control=control_name,
+        self.control = audio.Mixer(control=control_name,
                                        device=device_name,
                                        cardindex=cardindex)
 

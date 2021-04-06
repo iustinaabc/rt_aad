@@ -166,9 +166,6 @@ def trainFilters(dataset, usingDataset=True, eeg=None, markers=None, trialSize=N
         X = segment(X, trialSize)
         trialLength = trialSize
 
-
-
-
     """TRAIN CSP FILTERS"""
     print("---Training CSP---")
     firstBand = True
