@@ -102,8 +102,8 @@ def trainFilters(data="dataSubject8.mat", usingData=True, eeg1=None, eeg2=None, 
         # eeg = eeg[ind, :, :]
 
         # TRAINING WITH FIRST 36 MINUTES
-        attendedEar = attendedEar[:36]
-        eeg = eeg[:36, :, :]
+        attendedEar = attendedEar[12:]
+        eeg = eeg[12:, :, :]
 
         # removing spikes from data
         remove_index = np.arange(fs)
@@ -121,7 +121,7 @@ def trainFilters(data="dataSubject8.mat", usingData=True, eeg1=None, eeg2=None, 
             means = np.full((eeg.shape[3], eeg.shape[0], eeg.shape[2]), mean) # channels(24) x trials(14) x time(7200)
             means = np.transpose(means, (1, 2, 0))
 
-            eeg[:, band, :, :] = eeg[:, band, :, :] - means # trials(14) x (band(1)x) channels(24) x time(7200)
+            eeg[:, band, :, :] = eeg[:, band, :, :] - means  # trials(14) x (band) x channels(24) x time(7200)
         del eegTemp
         # save results
         X = eeg

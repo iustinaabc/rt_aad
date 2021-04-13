@@ -24,7 +24,7 @@ def emulate():
     info = StreamInfo('BioSemi', 'EEG', 24, 120, 'float32', 'myuid34234')
 
     i = 0
-    imax = i + 36
+    imax = i + 12
 
     # next make an outlet
     outlet = StreamOutlet(info)
@@ -42,6 +42,7 @@ def emulate():
             outlet.push_sample(mysample)
             time.sleep(1/240)
         i += 1
-        if i == imax:
-            break
-            # i = 0
+        if i == 48:
+            # break
+            print("ALERT")
+            i = 0

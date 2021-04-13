@@ -41,7 +41,7 @@ def main(parameters):
     location_eeg2 = parameters["location_eeg2"]
 
     # TODO: nog in parameters plaatsen voor GUI
-    filterbankband = np.array([[8, 12], [12, 30]])
+    filterbankband = np.array([[12], [30]])
 
     if saveTrainingData:  # als de data moet worden opgeslagen, vraag naar locatie voor opslag in GUI
         # vraag naar locatie ee1 en eeg2
@@ -140,28 +140,6 @@ def main(parameters):
         if updateBias:
             b = bSS
 
-    # TODO: scoring system to evaluate decoders.
-    # """Test on loaded data (temporary)"""
-    # scoreleft = 0
-    # scoreright = 0
-    # for streamcount in range(20):
-    #     eegtestleft = eeg1[:,30000+streamcount*750:30000+(streamcount+1)*750]
-    #     eegtestright = eeg2[:,30000+streamcount*750:30000+(streamcount+1)*750]
-
-    #     # Classify eeg chunk into left or right attended speaker using CSP filters
-    #     print("---Classifying---")
-    #     previousLeftOrRight = leftOrRight
-    #     leftOrRight, feat = classifier(eegtestleft, CSP, coef, b, fs=samplingFrequency)
-
-    #     print("left" if leftOrRight == -1. else "right")
-    #     if leftOrRight == -1.:
-    #         scoreleft += 1
-    #     leftOrRight, feat = classifier(eegtestright, CSP, coef, b, fs=samplingFrequency)
-    #     if leftOrRight == 1.:
-    #         scoreright += 1
-    # print('left',scoreleft/20)
-    # print('right',scoreright/20)
-
     # TODO: dedicated plot function.
     eeg_data = []
     leftOrRight_data = list()
@@ -169,16 +147,22 @@ def main(parameters):
     """ System Loop """
     print('---Starting the system---')
     count = 0
+    false = 0
     plt.figure("Realtime EEG")
     labels = []
     first = True
     for nummers in range(1, 25):
         labels.append('Channel ' + str(nummers))
+    data = loadmat('dataSubject8.mat')
+    attendedEar = np.squeeze(np.array(data.get('attendedEar')))
+    attendedEar = attendedEar[36:]
     while True:
         # Receive EEG from LSL
-        timeframe_classifying = 10*samplingFrequency
+        timefr = 10
+        timeframe_classifying = timefr*samplingFrequency
         timeframe_plot = samplingFrequency  # seconds
         for second in range(round(timeframe_classifying/samplingFrequency)):
+            print(count)
             eeg, unused = receive_eeg(EEG_inlet, timeframe_plot, datatype=datatype, channels=channels)
 
             '''FILTERING'''
@@ -212,19 +196,20 @@ def main(parameters):
                 classify_eeg = np.concatenate((classify_eeg, filtered_eeg), axis=2)
 
             for channel in range(len(eeg_plot)):
-                eeg_plot[channel,-timeframe_plot:] = np.add(eeg_plot[channel,-timeframe_plot:], np.full((timeframe_plot,), 20*(len(eeg_plot)-channel)))
+                eeg_plot[channel, -timeframe_plot:] = np.add(eeg_plot[channel, -timeframe_plot:],
+                                                             np.full((timeframe_plot,), 20*(len(eeg_plot)-channel)))
             eeg_plot = np.transpose(eeg_plot)
             # realtime EEG-plot:
             if len(eeg_plot) <= 5*timeframe_plot:
                 timesamples = list(np.linspace(0, count+1, (count+1)*timeframe_plot))
-                plt.plot(timesamples,eeg_plot)
+                plt.plot(timesamples, eeg_plot)
             else:
                 timesamples = list(np.linspace(count-5, count, 5 * timeframe_plot))
                 plt.plot(timesamples, eeg_plot[-(5*timeframe_plot):])
             plt.ylabel("EEG amplitude (mV)")
             plt.xlabel("time (seconds)")
             plt.title("Realtime EEG emulation")
-            plt.axis([None, None, 0 ,500])
+            plt.axis([None, None, 0, 500])
             plt.legend(labels, bbox_to_anchor=(1.0, 0.5), loc="center left")
             plt.draw()
             plt.pause(1/120)
@@ -238,24 +223,23 @@ def main(parameters):
         leftOrRight, feat = classifier(classify_eeg, CSP, coefficients, b, filterbankBands=filterbankband)
         leftOrRight_data.append(leftOrRight[0])
 
-        print("second --- ", count)
+        # Calculating how many mistakes were made
+        # print("second --- ", count)
         if leftOrRight == -1.:
-            print("[LEFT]")
+            if attendedEar[math.floor((count-1)/60)] == 2:
+                false += 1
+                print("wrong ", count)
         elif leftOrRight == 1.:
-            print("[RIGHT]")
-            #print(leftOrRight)
-
-        if count%60 == 0:
-            minute = round(count/60) +1
-            print("------  MINUTE ", str(minute), " -------" )
-
+            if attendedEar[math.floor((count-1)/60)] == 1:
+                false += 1
+                print("wrong ", count)
+        if count % 60 == 0:
+            print("Until minute " + str(int(count/60)) + ": " + str(false))
         if count == 12*60:
             break
 
-    print(leftOrRight_data)
-    # data = loadmat('dataSubject8.mat')
-    # attendedEar = np.squeeze(np.array(data.get('attendedEar')))
-    # print(attendedEar[:12])
+    print(100-false*timefr*100/(60*12), "%")
+
 
 if __name__ == '__main__':
     main(PARAMETERS)
