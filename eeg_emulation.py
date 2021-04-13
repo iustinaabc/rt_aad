@@ -15,7 +15,7 @@ from group_by_class import group_by_class
 from scipy.io import loadmat
 
 
-def emulate(all=True, left=False):
+def emulate():
     # first create a new stream info (here we set the name to BioSemi,
     # the content-type to EEG, 24 channels, 120 Hz, and float-valued data) The
     # last value would be the serial number of the device or some other more or
@@ -35,12 +35,6 @@ def emulate(all=True, left=False):
     eeg_left, eeg_right = group_by_class(eeg_data, attended_ear)
     eeg_left = np.transpose(eeg_left, (0, 2, 1))
     eeg_right = np.transpose(eeg_right, (0, 2, 1))
-    if not all:
-        imax = 24
-        if left:
-            eeg_data = eeg_left
-        else:
-            eeg_data = eeg_right
 
     while True:
         for j in range(7200):
@@ -48,7 +42,6 @@ def emulate(all=True, left=False):
             outlet.push_sample(mysample)
             time.sleep(1/240)
         i += 1
-        # mag dan waarschijnlijk nog weg:
         if i == imax:
             break
             # i = 0

@@ -19,9 +19,8 @@ from loadData import loadData
 from group_by_class import group_by_class
 
 PARAMETERS = {"datatype": np.float32, "samplingFrequency": 120, "channels": 24,
-              "timeframe": 7200, "trainingDataset": "dataSubject",
-              "updateCSP": False, "updateCov": False, "updateBias": False,
-              "windowLengthTraining": 10, "location_eeg1": "/home/rtaad/Desktop/eeg1.npy",
+              "trainingDataset": "dataSubject8.mat", "updateCSP": False, "updateCov": False,
+              "updateBias": False, "location_eeg1": "/home/rtaad/Desktop/eeg1.npy",
               "location_eeg2": "/home/rtaad/Desktop/eeg2.npy", "saveTrainingData": False}
 
 
@@ -32,16 +31,17 @@ def main(parameters):
     datatype = parameters["datatype"]  # ???
     samplingFrequency = parameters["samplingFrequency"]  # Sampling frequency in Hertz.
     channels = parameters["channels"]  # Number of electrodes on the EEG-cap.
-    timeframe = parameters["timeframe"]  # in samples (timeframe 7200 / samplingFrequency 120 = time in seconds = 60s)
     trainingDataset = parameters["trainingDataset"]  # File containing training data.
     updateCSP = parameters["updateCSP"]  # Using subject specific CSP filters
     updateCov = parameters["updateCov"]  # Using subject specific covariance matrix
     updateBias = parameters["updateBias"]  # Using subject specific bias
-    windowLengthTraining = parameters["windowLengthTraining"]  # timeframe for training is split into windows of windowlength * fs for lda calculation
 
     saveTrainingData = parameters["saveTrainingData"]
     location_eeg1 = parameters["location_eeg1"]
     location_eeg2 = parameters["location_eeg2"]
+
+    # TODO: nog in parameters plaatsen voor GUI
+    filterbankband = np.array([[8, 12], [12, 30]])
 
     if saveTrainingData:  # als de data moet worden opgeslagen, vraag naar locatie voor opslag in GUI
         # vraag naar locatie ee1 en eeg2
@@ -85,8 +85,8 @@ def main(parameters):
 
     # Start CSP filter and LDA training for later classification.
     print("--- Training filters and LDA... ---")
-    if False in [updateCSP, updateCov, updateBias]:  # Subject independent
-        CSP, coefficients, b = trainFilters(trainingDataset)
+    if False in [updateCSP, updateCov, updateBias]:  # Subject independent / dependent (own file)
+        CSP, coefficients, b = trainFilters(trainingDataset, filterbankBands=filterbankband)
     else:  # Subject dependent.
         print("Concentrate on the left speaker first for 6 minutes", flush=True)
         # TODO: start audio for training left ear
@@ -128,9 +128,8 @@ def main(parameters):
         trialSize = 12
 
         # Train FBCSP and LDA
-        CSPSS, coefSS, bSS = trainFilters(usingDataset=False, eeg1=eeg1, eeg2=eeg2, markers=markers,
-                                                trialSize=trialSize, fs=samplingFrequency,
-                                                windowLength=windowLengthTraining)
+        CSPSS, coefSS, bSS = trainFilters(usingData=False, eeg1=eeg1, eeg2=eeg2, fs=samplingFrequency,
+                                          filterbankBands=filterbankband)
 
         # Train the CSP.
         if updateCSP:
@@ -183,22 +182,19 @@ def main(parameters):
             eeg, unused = receive_eeg(EEG_inlet, timeframe_plot, datatype=datatype, channels=channels)
 
             '''FILTERING'''
-            params = {  # FILTERBANK SETUP
-                # "filterbankBands": np.array([[1,2:2:26],[4:2:30]]),  #first row: lower bound, second row: upper bound
-                "filterbankBands": np.array([[12], [30]])}
             eegTemp = eeg  # nu afmetingen eeg: shape eeg (24, 5*120)
-            eeg = np.zeros((len(params["filterbankBands"][0]), np.shape(eeg)[0], np.shape(eeg)[1]), dtype=np.float32)
+            eeg = np.zeros((len(filterbankband[0]), np.shape(eeg)[0], np.shape(eeg)[1]), dtype=np.float32)
 
-            for band in range(len(params["filterbankBands"][0])):
-                lower, upper = scipy.signal.iirfilter(8, np.array([2 * params["filterbankBands"][0, band] / samplingFrequency,
-                                                           2 * params["filterbankBands"][1, band] / samplingFrequency]))
+            for band in range(len(filterbankband[0])):
+                lower, upper = scipy.signal.iirfilter(8, np.array([2 * filterbankband[0, band] / samplingFrequency,
+                                                           2 * filterbankband[1, band] / samplingFrequency]))
                 eeg[band, :, :] = np.transpose(scipy.signal.filtfilt(lower, upper, np.transpose(eegTemp), axis=0))
                 # shape eeg: bands (1) x channels (24) x time (7200)
                 mean = np.average(eeg[band, :, :], axis=1)  # shape: channels(24)
                 means = np.full((eeg.shape[2], eeg.shape[1]), mean)  # time(600) x channels(24)
-                means = np.transpose(means, (1, 0)) # channels(24) x time(600)
+                means = np.transpose(means, (1, 0))  # channels(24) x time(600)
 
-                eeg[band, :, :] = eeg[band, :, :] - means  #(band(1)x) channels(24) x time(600)
+                eeg[band, :, :] = eeg[band, :, :] - means  # (band(1)x) channels(24) x time(600)
             del eegTemp
             # save results
 
@@ -239,13 +235,12 @@ def main(parameters):
         # Classify eeg chunk into left or right attended speaker using CSP filters
         "---Classifying---"
         classify_eeg = np.transpose((np.transpose(classify_eeg)[-timeframe_classifying:]))
-        leftOrRight, feat = classifier(classify_eeg, CSP, coefficients, b, fs=samplingFrequency)
+        leftOrRight, feat = classifier(classify_eeg, CSP, coefficients, b, filterbankBands=filterbankband)
         leftOrRight_data.append(leftOrRight[0])
 
         print("second --- ", count)
         if leftOrRight == -1.:
             print("[LEFT]")
-            #print(leftOrRight)
         elif leftOrRight == 1.:
             print("[RIGHT]")
             #print(leftOrRight)

@@ -21,7 +21,8 @@ def logenergy(y):
     return np.log(outputEnergyVector)
 
 
-def trainFilters(dataset="dataSubject", usingDataset=True, eeg1=None, eeg2=None, markers=None, trialSize=None, fs=250, windowLength=None):
+def trainFilters(data="dataSubject8.mat", usingData=True, eeg1=None, eeg2=None, fs=120,
+                 filterbankBands=np.array([[12], [30]])):
     """
     Can be used both on a dataset to train Subject Independent filters and LDA as on Subject EEG recording to train
     Subject Specific filters and LDA
@@ -72,76 +73,62 @@ def trainFilters(dataset="dataSubject", usingDataset=True, eeg1=None, eeg2=None,
             "eegChanSel": []
         },
 
-        #FILTERBANK SETUP
-        # "filterbankBands": np.array([[1,2:2:26],[4:2:30]]),  #first row: lower bound, second row: upper bound
-        "filterbankBands": np.array([[12],[30]]),
+        # FILTERBANK SETUP
+        # "filterbankBands": np.array([[1.2,2,26],[4,2,30]]),  #first row: lower bound, second row: upper bound
+        "filterbankBands": filterbankBands,
 
-        #COVARIANCE ESTIMATION
+        # COVARIANCE ESTIMATION
         "cov": {
             "method": "lwcov",  # covariance matrix estimation method: 'classic' / 'lwcov'
             "weighting": False,  # weighting of individual covariance matrices based on distance
             "distance": "riem"  # distance measure to weight training subjects: 'riem' = Riemannian distance / 'KLdiv' = Kullback-Leibner divergence
         },
 
-        #CSP FILTERS
+        # CSP FILTERS
         "csp":{
             "spatial_dim": 6,  # number of CS patterns to retain (in total, per band) (K)
             "optmode": "ratiotrace"  # optimization mode: 'ratiotrace' or 'traceratio'
         }}
 
-    if usingDataset:  # When the CSP filters and LDA is trained on a dataset (4-dimensional) and Subject Independent
+    if usingData:  # in case of training on existing data
 
-        if dataset == "dataSubject":
-            # TODO: aanpassen zodat alle (consistente) subjects gebruikt worden voor training
-            trainingSet = {['8']}
+        [eeg, attendedEar, fs] = loadData(data, params["preprocessing"],
+                                                          params["conditions"])
 
-        firstTrainingSubject = True
-        print("Loading data other subjects")
-        for sb in trainingSet:
-            [eeg, attendedEar, fs, trialLength] = loadData(dataset, sb, params["preprocessing"],
-                                                              params["conditions"])
+        # Random subset in trial dimension without repetition of indices
+        # ind = random.sample(list(range(0, len(attendedEar))),
+        #                      k=round(params["preprocessing"]["subset"] * len(attendedEar)))
+        # attendedEar = attendedEar[ind]
+        # eeg = eeg[ind, :, :]
 
-            # Random subset in trial dimension without repetition of indices
-            # ind = random.sample(list(range(0, len(attendedEar))),
-            #                      k=round(params["preprocessing"]["subset"] * len(attendedEar)))
-            # attendedEar = attendedEar[ind]
-            # eeg = eeg[ind, :, :]
-            # TRAINING WITH FIRST 36 MINUTES
-            attendedEar = attendedEar[:36]
-            eeg = eeg[:36, :, :]
+        # TRAINING WITH FIRST 36 MINUTES
+        attendedEar = attendedEar[:36]
+        eeg = eeg[:36, :, :]
 
-            remove_index = np.arange(fs)
-            eeg = np.delete(eeg, remove_index, axis=2)
+        # removing spikes from data
+        remove_index = np.arange(fs)
+        eeg = np.delete(eeg, remove_index, axis=2)
 
-            # apply FB
-            # eerst afmetingen: shape eeg (24, 7200, 48)
-            # nu afmetingen eeg: shape eeg (48, 24, 7200)
-            # [0] --> [1], [1] ---> [2], [2] --> [0]
-            eegTemp = eeg  # (24,7200,48) ---> (7200, 24, 48) ===== np.transpose(onze eeg)
-            eeg = np.zeros((eeg.shape[0], len(params["filterbankBands"][0]), eeg.shape[1], eeg.shape[2]), dtype=np.float32)
-            for band in range(len(params["filterbankBands"][0])):
-                lower, upper = scipy.signal.iirfilter(8, np.array(
-                    [2 * params["filterbankBands"][0, band] / fs, 2 * params["filterbankBands"][1, band] / fs]))
-                eeg[:, band, :, :] = np.transpose(scipy.signal.filtfilt(lower, upper, np.transpose(eegTemp), axis=0))
-                # shape eeg: trials (14) x bands (1) x channels (24) x time (7200)
-                mean = np.average(eeg[:, band, :, :], 2) # shape: trials (14) x channels(24)
-                means = np.full((eeg.shape[3], eeg.shape[0], eeg.shape[2]), mean) # channels(24) x trials(14) x time(7200)
-                means = np.transpose(means, (1,2,0))
+        # apply FB
+        eegTemp = eeg  # (24,7200,48) ---> (7200, 24, 48) ===== np.transpose(onze eeg)
+        eeg = np.zeros((eeg.shape[0], len(params["filterbankBands"][0]), eeg.shape[1], eeg.shape[2]), dtype=np.float32)
+        for band in range(len(params["filterbankBands"][0])):
+            lower, upper = scipy.signal.iirfilter(8, np.array(
+                [2 * params["filterbankBands"][0, band] / fs, 2 * params["filterbankBands"][1, band] / fs]))
+            eeg[:, band, :, :] = np.transpose(scipy.signal.filtfilt(lower, upper, np.transpose(eegTemp), axis=0))
+            # shape eeg: trials (14) x bands (1) x channels (24) x time (7200)
+            mean = np.average(eeg[:, band, :, :], 2) # shape: trials (14) x channels(24)
+            means = np.full((eeg.shape[3], eeg.shape[0], eeg.shape[2]), mean) # channels(24) x trials(14) x time(7200)
+            means = np.transpose(means, (1, 2, 0))
 
-                eeg[:, band, :, :] = eeg[:, band, :, :] - means # trials(14) x (band(1)x) channels(24) x time(7200)
-            del eegTemp
-            # save results
-            if firstTrainingSubject:
-                X = eeg
-                labels = attendedEar
-                firstTrainingSubject = False
-            else:
-                X = np.concatenate((X, eeg), axis=3)
-                labels = np.concatenate((labels, attendedEar))
+            eeg[:, band, :, :] = eeg[:, band, :, :] - means # trials(14) x (band(1)x) channels(24) x time(7200)
+        del eegTemp
+        # save results
+        X = eeg
+        labels = attendedEar
 
-
-    # TODO: subject specific case
-    else:  # When the training data is subject specific and 2-dimensional in channels x time
+    # TODO: realtime case
+    else:  # in case of realtime training
 
         # apply FB
         all_eeg = [eeg1, eeg2]
@@ -173,7 +160,6 @@ def trainFilters(dataset="dataSubject", usingDataset=True, eeg1=None, eeg2=None,
     """TRAIN CSP FILTERS"""
     print("---Training CSP---")
     firstBand = True
-    firstEEG = True
     CSP = dict()
     for band in range(0, len(params["filterbankBands"][0])):
         Xtrain = X[:, band, :, :]
@@ -182,42 +168,39 @@ def trainFilters(dataset="dataSubject", usingDataset=True, eeg1=None, eeg2=None,
         [W, score, traceratio] = trainCSP(Xtrain, labels, params["csp"]["spatial_dim"], params["csp"]["optmode"],
                                                    params["cov"]["method"])
         if firstBand:
-            CSP["W"] = W
-            CSP["score"] = score
+            CSP["W"] = W[np.newaxis]
+            CSP["score"] = [score]
             CSP["traceratio"] = traceratio
             # X: [trials 14, bands 1, channels 24, time 7200]
             # W: [channels 24, spatial dim 6]
             feat = []
             for trial in range(np.shape(X)[0]):
-                Y = np.dot(np.transpose(CSP["W"]), np.squeeze(X[trial, band, :, :]))
+                Y = np.dot(np.transpose(CSP["W"][band]), np.squeeze(X[trial, band, :, :]))
                 feat.append(logenergy(Y))
 
             firstBand = False
-            # Shape Y: [trials 14, spatial dim 6, time 7200]
-
-        # TODO: Work on multiple bands
+            # Shape feat: [trials 14, spatial dim 6, time 7200]
         else:
-            CSP["W"] = np.concatenate((CSP["W"], W), axis=2)
-            CSP["score"] = np.concatenate((CSP["score"], score), axis=2)
-            CSP["traceratio"] = np.concatenate((CSP["traceratio"], traceratio), axis=2)
+            W = W[np.newaxis]
+            CSP["W"] = np.concatenate((CSP["W"], W), axis=0)
+            CSP["score"] = CSP["score"].append(score)
+            CSP["traceratio"] = np.concatenate((CSP["traceratio"], traceratio), axis=0)
 
             # Filter both training and testing data using CSP filters
             # LDA
             feat_temp = []
             for trial in range(np.shape(X)[0]):
-                Ytemp = np.dot(np.transpose(CSP["W"][:, :, band]), np.squeeze(X[trial, band, :, :]))
+                Ytemp = np.dot(np.transpose(CSP["W"][band]), np.squeeze(X[trial, band, :, :]))
                 feat_temp.append(logenergy(Ytemp))
-            feat = np.concatenate((feat, feat_temp))
-            # Shape Y: [trials, spatial dim, time, bands]
-            # shape feat: [trials (#minutes) , spatial dim]
-
+            feat = np.concatenate((feat, feat_temp), axis=1)
+            # shape feat: [trials (#minutes) , spatial dim * nb of bands]
 
     """CALCULATE THE COEFFICIENTS"""
 
     f_in_classes = group_by_class(feat, labels)
     mean1 = np.mean(f_in_classes[0], axis=0)
     mean2 = np.mean(f_in_classes[1], axis=0)
-    # ###plot training feauture###
+    # # ###plot training feauture###
     # plt.figure()
     # for i in range(np.shape(f_in_classes[0])[0]):
     #     green_scat = plt.scatter(f_in_classes[0][i][0], f_in_classes[0][i][5], color='green', label='Training Class 1')
