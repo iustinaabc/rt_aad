@@ -224,7 +224,5 @@ def trainFilters(data="dataSubject8.mat", usingData=True, eeg1=None, eeg2=None, 
     sum_mean = np.add(mean1, mean2)
     coef = np.transpose(np.dot(np.linalg.inv(S), diff_mean))
     b = -0.5 * np.dot(coef, sum_mean)
-    print(coef)
-    print(b)
 
     return CSP, coef, b, f_in_classes

@@ -40,7 +40,10 @@ def main(parameters):
     location_eeg1 = parameters["location_eeg1"]
     location_eeg2 = parameters["location_eeg2"]
 
-    timefr = 10
+    timefr = 6
+
+    print("-***- ", trainingDataset, " -***-" )
+    print("TIMEFRAME: ", timefr, " SECONDS")
 
     # TODO: nog in parameters plaatsen voor GUI
     filterbankband = np.array([[12], [30]])
