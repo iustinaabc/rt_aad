@@ -153,16 +153,16 @@ def main(parameters):
     first = True
     for nummers in range(1, 25):
         labels.append('Channel ' + str(nummers))
-    data = loadmat('dataSubject8.mat')
+    data = loadmat('dataSubject9.mat')
     attendedEar = np.squeeze(np.array(data.get('attendedEar')))
-    attendedEar = attendedEar[36:]
+    attendedEar = attendedEar[:12]
     while True:
         # Receive EEG from LSL
-        timefr = 10
+        timefr = 5
         timeframe_classifying = timefr*samplingFrequency
         timeframe_plot = samplingFrequency  # seconds
         for second in range(round(timeframe_classifying/samplingFrequency)):
-            print(count)
+            # print(count)
             eeg, unused = receive_eeg(EEG_inlet, timeframe_plot, datatype=datatype, channels=channels)
 
             '''FILTERING'''
@@ -221,7 +221,7 @@ def main(parameters):
         "---Classifying---"
         classify_eeg = np.transpose((np.transpose(classify_eeg)[-timeframe_classifying:]))
         leftOrRight, feat = classifier(classify_eeg, CSP, coefficients, b, filterbankBands=filterbankband)
-        leftOrRight_data.append(leftOrRight[0])
+        leftOrRight_data.append(leftOrRight)
 
         # Calculating how many mistakes were made
         # print("second --- ", count)

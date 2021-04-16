@@ -12,7 +12,7 @@ import multiprocessing
 import numpy as np
 
 import wave
-import pyalsaaudio as audio
+import alsaaudio as audio
 
 from pylsl import StreamInfo, StreamOutlet
 
@@ -25,10 +25,10 @@ class AudioPlayer:
     An audio player class based on ALSA (Linux only).
     """
     def __init__(self):
-        self._device = None # PCM playback device
+        self._device = None  # PCM playback device
         self._playback_daemon = None
-        self._wav_fh = None # wav file 
-        self._period_size = None # period size for playback
+        self._wav_fh = None  # wav file
+        self._period_size = None  # period size for playback
         self._marker_outlet = None
 
     def list_devices(self):
@@ -96,7 +96,6 @@ class AudioPlayer:
         info = StreamInfo('AudioPlayerStream', 'Markers', 1, 0, 'string', 'myuidw43536')
         self._marker_outlet = StreamOutlet(info)
 
-
     def __low_level_playback(self):
         # low level audio playback
         data = self._wav_fh.readframes(self._period_size)
@@ -137,10 +136,8 @@ class LRBalancer:
     _LEFT = 0
     _RIGHT = 1
 
-
     def __init__(self, ):
         self._control = None
-
 
     def list_controls(self, device_name):
         """
@@ -153,7 +150,6 @@ class LRBalancer:
 
         """
         print(audio.mixers(device=device_name))
-
 
     def set_control(self, control_name, device_name, cardindex):
         """
@@ -170,7 +166,6 @@ class LRBalancer:
         self.control = audio.Mixer(control=control_name,
                                        device=device_name,
                                        cardindex=cardindex)
-
 
     # TODO refactor everything related to left and right as parameter
     def set_volume_left(self, volume):
@@ -192,7 +187,6 @@ class LRBalancer:
 
         """
         return self.control.getvolume()
-
 
     def set_volume_right(self, volume):
         """
@@ -228,7 +222,6 @@ class LRBalancer:
             self.set_volume_left(volume)
             self.__pause(duration, nb_steps)
 
-
     def fade_right(self, in_out, duration, nb_steps=100):
         """
         Fade the right channel in or out.
@@ -247,7 +240,6 @@ class LRBalancer:
             self.set_volume_right(volume)
             self.__pause(duration, nb_steps)
 
-
     def __create_volume_steps(self, in_out, nb_steps):
         steps = np.linspace(0, 100, nb_steps)
 
@@ -256,10 +248,8 @@ class LRBalancer:
 
         return steps
 
-
     def __pause(self, duration, nb_steps):
         time.sleep(duration / nb_steps)
-
 
     def __perceptual_conversion(self, volume, dynamic_range=50):
         # info: https://github.com/larsimmisch/pyalsaaudio/issues/8
@@ -312,6 +302,7 @@ def main():
     time.sleep(2)
 
     print('leaving main')
+
 
 if __name__ == '__main__':
     main()

@@ -58,7 +58,6 @@ def trainFilters(data="dataSubject8.mat", usingData=True, eeg1=None, eeg2=None, 
     """
 
     """ SETUP: parameters """
-
     params = {
         "windowLengths": 5,  # different lengths decision windows to test (in seconds)
         "saveName": "temp",  # name to save results with
@@ -101,7 +100,7 @@ def trainFilters(data="dataSubject8.mat", usingData=True, eeg1=None, eeg2=None, 
         # attendedEar = attendedEar[ind]
         # eeg = eeg[ind, :, :]
 
-        # TRAINING WITH FIRST 36 MINUTES
+        # TRAINING WITH LAST 36 MINUTES
         attendedEar = attendedEar[12:]
         eeg = eeg[12:, :, :]
 
@@ -220,8 +219,7 @@ def trainFilters(data="dataSubject8.mat", usingData=True, eeg1=None, eeg2=None, 
     diff_mean = np.subtract(mean2, mean1)
     sum_mean = np.add(mean1, mean2)
     coef = np.transpose(np.dot(np.linalg.inv(S), diff_mean))
+
     b = -0.5 * np.matmul(coef, sum_mean)
 
     return CSP, coef, b
-
-

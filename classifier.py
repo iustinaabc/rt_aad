@@ -45,6 +45,6 @@ def classifier(eeg, CSP, coef, b, filterbankBands):
             feat = np.concatenate((feat, feat_temp), axis=1)
 
     """ Prediction """
-    leftOrRight = np.sign(np.matmul(feat, coef) + b)
+    leftOrRight = np.sign(np.matmul(coef, np.squeeze(feat)) + b)
 
     return leftOrRight, feat
