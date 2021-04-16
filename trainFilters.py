@@ -22,7 +22,7 @@ def logenergy(y):
 
 
 def trainFilters(data="dataSubject8.mat", usingData=True, eeg1=None, eeg2=None, fs=120,
-                 filterbankBands=np.array([[12], [30]])):
+                 filterbankBands=np.array([[12], [30]]), timefr = 10):
     """
     Can be used both on a dataset to train Subject Independent filters and LDA as on Subject EEG recording to train
     Subject Specific filters and LDA
@@ -174,11 +174,13 @@ def trainFilters(data="dataSubject8.mat", usingData=True, eeg1=None, eeg2=None, 
             # W: [channels 24, spatial dim 6]
             feat = []
             for trial in range(np.shape(X)[0]):
-                Y = np.dot(np.transpose(CSP["W"][band]), np.squeeze(X[trial, band, :, :]))
-                feat.append(logenergy(Y))
-
+                for window in range(int(60/timefr)):
+                    X_feat = np.squeeze(X[trial, band,:,window*timefr*int(fs):(window+1)*timefr*int(fs)])
+                    Y = np.dot(np.transpose(CSP["W"][band]), X_feat)
+                    feat.append(logenergy(Y))
             firstBand = False
-            # Shape feat: [trials 14, spatial dim 6, time 7200]
+            # Shape Y: [spatial dim 6, time 7200]
+            # shape feat: [trials, spatial dim 6 x #bands]
         else:
             W = W[np.newaxis]
             CSP["W"] = np.concatenate((CSP["W"], W), axis=0)
@@ -189,14 +191,16 @@ def trainFilters(data="dataSubject8.mat", usingData=True, eeg1=None, eeg2=None, 
             # LDA
             feat_temp = []
             for trial in range(np.shape(X)[0]):
-                Ytemp = np.dot(np.transpose(CSP["W"][band]), np.squeeze(X[trial, band, :, :]))
-                feat_temp.append(logenergy(Ytemp))
+                for window in range(int(60/timefr)):
+                    X_feat = np.squeeze(X[trial, band, :, window * timefr * int(fs):(window + 1) * timefr * int(fs)])
+                    Ytemp = np.dot(np.transpose(CSP["W"][band]), X_feat)
+                    feat_temp.append(logenergy(Ytemp))
             feat = np.concatenate((feat, feat_temp), axis=1)
             # shape feat: [trials (#minutes) , spatial dim * nb of bands]
 
     """CALCULATE THE COEFFICIENTS"""
 
-    f_in_classes = group_by_class(feat, labels)
+    f_in_classes = group_by_class(feat, labels, timefr)
     mean1 = np.mean(f_in_classes[0], axis=0)
     mean2 = np.mean(f_in_classes[1], axis=0)
     # # ###plot training feauture###
@@ -219,7 +223,8 @@ def trainFilters(data="dataSubject8.mat", usingData=True, eeg1=None, eeg2=None, 
     diff_mean = np.subtract(mean2, mean1)
     sum_mean = np.add(mean1, mean2)
     coef = np.transpose(np.dot(np.linalg.inv(S), diff_mean))
+    b = -0.5 * np.dot(coef, sum_mean)
+    print(coef)
+    print(b)
 
-    b = -0.5 * np.matmul(coef, sum_mean)
-
-    return CSP, coef, b
+    return CSP, coef, b, f_in_classes

@@ -29,12 +29,12 @@ def emulate():
     # next make an outlet
     outlet = StreamOutlet(info)
     # DONE: change location eeg_left & right
-    data_subject = loadmat('dataSubject8.mat')
-    attended_ear = np.squeeze(np.array(data_subject.get('attendedEar')))
+    data_subject = loadmat('dataSubject9.mat')
+    # attended_ear = np.squeeze(np.array(data_subject.get('attendedEar')))
     eeg_data = np.squeeze(np.array(data_subject.get('eegTrials')))
-    eeg_left, eeg_right = group_by_class(eeg_data, attended_ear)
-    eeg_left = np.transpose(eeg_left, (0, 2, 1))
-    eeg_right = np.transpose(eeg_right, (0, 2, 1))
+    # eeg_left, eeg_right = group_by_class(eeg_data, attended_ear)
+    # eeg_left = np.transpose(eeg_left, (0, 2, 1))
+    # eeg_right = np.transpose(eeg_right, (0, 2, 1))
 
     while True:
         for j in range(7200):

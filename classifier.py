@@ -32,17 +32,15 @@ def classifier(eeg, CSP, coef, b, filterbankBands):
         if first:
             # X: [bands 1, channels 24, time 600]
             # W: [band, channels 24, spatial dim 6]
-            feat = []
             Y = np.dot(np.transpose(CSP["W"][band]), np.squeeze(eeg[band]))
-            feat.append(logenergy(Y))
+            feat = logenergy(Y)
 
             first = False
             # Shape feat: [spatial dim 6, time 7200]
         else:
-            feat_temp = []
             Ytemp = np.dot(np.transpose(CSP["W"][band]), np.squeeze(eeg[band]))
-            feat_temp.append(logenergy(Ytemp))
-            feat = np.concatenate((feat, feat_temp), axis=1)
+            feat_temp = logenergy(Ytemp)
+            feat = np.concatenate((feat, feat_temp))
 
     """ Prediction """
     leftOrRight = np.sign(np.matmul(coef, np.squeeze(feat)) + b)

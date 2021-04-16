@@ -19,7 +19,7 @@ from loadData import loadData
 from group_by_class import group_by_class
 
 PARAMETERS = {"datatype": np.float32, "samplingFrequency": 120, "channels": 24,
-              "trainingDataset": "dataSubject8.mat", "updateCSP": False, "updateCov": False,
+              "trainingDataset": "dataSubject9.mat", "updateCSP": False, "updateCov": False,
               "updateBias": False, "location_eeg1": "/home/rtaad/Desktop/eeg1.npy",
               "location_eeg2": "/home/rtaad/Desktop/eeg2.npy", "saveTrainingData": False}
 
@@ -39,6 +39,8 @@ def main(parameters):
     saveTrainingData = parameters["saveTrainingData"]
     location_eeg1 = parameters["location_eeg1"]
     location_eeg2 = parameters["location_eeg2"]
+
+    timefr = 10
 
     # TODO: nog in parameters plaatsen voor GUI
     filterbankband = np.array([[12], [30]])
@@ -86,7 +88,7 @@ def main(parameters):
     # Start CSP filter and LDA training for later classification.
     print("--- Training filters and LDA... ---")
     if False in [updateCSP, updateCov, updateBias]:  # Subject independent / dependent (own file)
-        CSP, coefficients, b = trainFilters(trainingDataset, filterbankBands=filterbankband)
+        CSP, coefficients, b, f_in_classes = trainFilters(trainingDataset, filterbankBands=filterbankband, timefr = timefr)
     else:  # Subject dependent.
         print("Concentrate on the left speaker first for 6 minutes", flush=True)
         # TODO: start audio for training left ear
@@ -99,7 +101,7 @@ def main(parameters):
         #         eeg1 = np.concatenate(eeg1, tempeeg1, axis=2)
         # TODO: replace this with code to stop the audio player
         # ap.stop()
-        data_subject = loadmat('dataSubject8.mat')
+        data_subject = loadmat(trainingDataset)
         attended_ear = np.squeeze(np.array(data_subject.get('attendedEar')))
         eeg_data = np.squeeze(np.array(data_subject.get('eegTrials')))
         eeg1, eeg2 = group_by_class(eeg_data, attended_ear)
@@ -128,8 +130,8 @@ def main(parameters):
         trialSize = 12
 
         # Train FBCSP and LDA
-        CSPSS, coefSS, bSS = trainFilters(usingData=False, eeg1=eeg1, eeg2=eeg2, fs=samplingFrequency,
-                                          filterbankBands=filterbankband)
+        CSPSS, coefSS, bSS, f_in_classes = trainFilters(usingData=False, eeg1=eeg1, eeg2=eeg2, fs=samplingFrequency,
+                                          filterbankBands=filterbankband, timefr=timefr)
 
         # Train the CSP.
         if updateCSP:
@@ -144,6 +146,8 @@ def main(parameters):
     eeg_data = []
     leftOrRight_data = list()
     eeg_plot = list()
+    featplot =[]
+
     """ System Loop """
     print('---Starting the system---')
     count = 0
@@ -153,12 +157,12 @@ def main(parameters):
     first = True
     for nummers in range(1, 25):
         labels.append('Channel ' + str(nummers))
-    data = loadmat('dataSubject9.mat')
-    attendedEar = np.squeeze(np.array(data.get('attendedEar')))
+    testing_data = loadmat(trainingDataset)
+    attendedEar = np.squeeze(np.array(testing_data.get('attendedEar')))
     attendedEar = attendedEar[:12]
     while True:
         # Receive EEG from LSL
-        timefr = 5
+        #timefr = 12
         timeframe_classifying = timefr*samplingFrequency
         timeframe_plot = samplingFrequency  # seconds
         for second in range(round(timeframe_classifying/samplingFrequency)):
@@ -222,10 +226,12 @@ def main(parameters):
         classify_eeg = np.transpose((np.transpose(classify_eeg)[-timeframe_classifying:]))
         leftOrRight, feat = classifier(classify_eeg, CSP, coefficients, b, filterbankBands=filterbankband)
         leftOrRight_data.append(leftOrRight)
+        featplot.append(feat)
 
         # Calculating how many mistakes were made
         # print("second --- ", count)
         if leftOrRight == -1.:
+            print("[LEFT]")
             if attendedEar[math.floor((count-1)/60)] == 2:
                 false += 1
                 print("wrong ", count)
@@ -235,6 +241,23 @@ def main(parameters):
                 print("wrong ", count)
         if count % 60 == 0:
             print("Until minute " + str(int(count/60)) + ": " + str(false))
+            plt.figure("feature")
+            for i in range(np.shape(f_in_classes)[1]):
+                green_scat = plt.scatter(f_in_classes[0][i][0], f_in_classes[0][i][5], color='green',
+                                         label='Training Class 1')
+                red_scat = plt.scatter(f_in_classes[1][i][0], f_in_classes[1][i][5], color='red',
+                                       label='Training Class 2')
+            # plt.legend(("Class 1", "Class 2"))
+            plt.title("Feature vectors of 1st and 6th dimension plotted in 2D")
+            f = featplot[-round(60/timefr):]
+            for i in range(int(np.shape(f)[0])):
+                yellow_scat = plt.scatter(f[i][0], f[i][5], color='yellow', label='Test')
+                #orange_scat = plt.scatter(f[i + 6][0], f[i + 6][5], color='orange', label='Test Class 2')
+            plt.legend(handles=[green_scat, red_scat, yellow_scat])#, orange_scat])
+            plt.show()
+
+            plt.figure("Realtime EEG")
+
         if count == 12*60:
             break
 

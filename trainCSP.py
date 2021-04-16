@@ -51,7 +51,7 @@ def trainCSP(X, y, spatial_dim, optmode, covMethod='lwcov'):
     if optmode != 'ratiotrace':
         optmode = 'ratiotrace'
     # Divide into X for each class
-    X1, X2 = group_by_class(X, y)
+    X1, X2 = group_by_class(X, y, 60)
     X1 = np.transpose(X1, (0, 2, 1))
     X2 = np.transpose(X2, (0, 2, 1))
 
