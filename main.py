@@ -162,11 +162,9 @@ def main(parameters):
     attendedEar = attendedEar[:12]
     while True:
         # Receive EEG from LSL
-        #timefr = 12
         timeframe_classifying = timefr*samplingFrequency
         timeframe_plot = samplingFrequency  # seconds
         for second in range(round(timeframe_classifying/samplingFrequency)):
-            # print(count)
             eeg, unused = receive_eeg(EEG_inlet, timeframe_plot, datatype=datatype, channels=channels)
 
             '''FILTERING'''
@@ -229,9 +227,7 @@ def main(parameters):
         featplot.append(feat)
 
         # Calculating how many mistakes were made
-        # print("second --- ", count)
         if leftOrRight == -1.:
-            print("[LEFT]")
             if attendedEar[math.floor((count-1)/60)] == 2:
                 false += 1
                 print("wrong ", count)
@@ -252,8 +248,7 @@ def main(parameters):
             f = featplot[-round(60/timefr):]
             for i in range(int(np.shape(f)[0])):
                 yellow_scat = plt.scatter(f[i][0], f[i][5], color='yellow', label='Test')
-                #orange_scat = plt.scatter(f[i + 6][0], f[i + 6][5], color='orange', label='Test Class 2')
-            plt.legend(handles=[green_scat, red_scat, yellow_scat])#, orange_scat])
+            plt.legend(handles=[green_scat, red_scat, yellow_scat])
             plt.show()
 
             plt.figure("Realtime EEG")

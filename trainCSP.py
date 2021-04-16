@@ -62,11 +62,9 @@ def trainCSP(X, y, spatial_dim, optmode, covMethod='lwcov'):
         for group in [X1, X2]:
             for trials in group:
                 if first:
-                    #s_temp = lwcov(trials)
                     s_temp = covariance.ledoit_wolf(np.transpose(trials))[0]
                     first = False
                 else:
-                    #s_temp += lwcov(trials)
                     s_temp += covariance.ledoit_wolf(np.transpose(trials))[0]
             first = True
             s_temp = s_temp / np.shape(group)[0]
@@ -84,7 +82,6 @@ def trainCSP(X, y, spatial_dim, optmode, covMethod='lwcov'):
             first = True
             Stemp = Stemp / np.shape(group)[0]
             S.append(Stemp)
-
 
     '''---Optimize CSP filters---'''
 

@@ -22,17 +22,17 @@ def logenergy(y):
 
 
 def trainFilters(data="dataSubject8.mat", usingData=True, eeg1=None, eeg2=None, fs=120,
-                 filterbankBands=np.array([[12], [30]]), timefr = 10):
+                 filterbankBands=np.array([[12], [30]]), timefr=10):
     """
     Can be used both on a dataset to train Subject Independent filters and LDA as on Subject EEG recording to train
     Subject Specific filters and LDA
 
     Parameters
     ----------
-    :param usingDataset: (bool) True if the FBCSP filter and LDA are trained on a dataset and are Subject Independent
+    :param usingData: (bool) True if the FBCSP filter and LDA are trained on a dataset and are Subject Independent
                                 False if subject specific EEG data used to train FBCSP filters and LDA.
 
-    :param dataset: (str) The name of the dataset to train the FBCSP filters and LDA on.
+    :param data: (str) The name of the dataset to train the FBCSP filters and LDA on.
                           --Is only used if usingDataset is True--
 
     :param eeg: (2-dim numpy array) The EEG recording to train the subject specific FBCSP filters and LDA on.
