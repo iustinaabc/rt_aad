@@ -2,7 +2,7 @@ import numpy as np
 from scipy.io import loadmat
 
 
-def loadData(datafile, preprocessing, varargin):
+def loadData(datafile):
     """
     Load the EEG data and labels from the dataset
 
@@ -20,21 +20,7 @@ def loadData(datafile, preprocessing, varargin):
     # load data
     data = loadmat(datafile)
     attendedEar = np.squeeze(np.array(data.get('attendedEar')))
-    fs = data.get('fs')
-
-    # if varargin is None:
-    #     conditions = 'all'
-    # else:
-    #     conditions = varargin[0]
-    #
-    # if conditions == "dry":
-    #     indices = np.where(cond == 0)
-    #     data["eegTrials"] = data["eegTrials"][indices]
-    #     attendedEar = data["attendedEar"][indices]
-    # if conditions == "hrtf":
-    #     indices = np.where(cond == 1)
-    #     data["eegTrials"] = data["eegTrials"][indices]
-    #     attendedEar = data["attendedEar"][indices]
+    fs = np.squeeze(data.get('fs'))
 
     # eegTrials is list of cells (trials with dimension time x channel)
     # Convert to numpy array with dimensions trial(48) x channel(24) x time(7200)

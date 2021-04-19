@@ -13,50 +13,51 @@ from pylsl import StreamInlet, resolve_stream, local_clock
 from trainFilters import trainFilters
 from receive_eeg import receive_eeg
 from eeg_emulation import emulate
+# from emulator_SandN import emulate
 from classifier import classifier
 from scipy.io import loadmat
 from loadData import loadData
 from group_by_class import group_by_class
+from sklearn.model_selection import train_test_split
 
-PARAMETERS = {"datatype": np.float32, "samplingFrequency": 120, "channels": 24,
-              "trainingDataset": "dataSubject8.mat", "updateCSP": False, "updateCov": False,
-              "updateBias": False, "location_eeg1": "/home/rtaad/Desktop/eeg1.npy",
-              "location_eeg2": "/home/rtaad/Desktop/eeg2.npy", "saveTrainingData": False}
+
+PARAMETERS = {"RealtimeTraining": False, "samplingFrequency": 120, "Channels": 24,
+              "trainingDataset": "dataSubject8.mat",  "decisionWindow": 10, "filterBankband": np.array([[12], [30]]),
+              "updateCSP": False, "updateCov": False, "updateBias": False,
+              "saveTrainingData": False, "location_eeg1": "/home/rtaad/Desktop/eeg1.npy", "location_eeg2": "/home/rtaad/Desktop/eeg2.npy"}
 
 
 def main(parameters):
 
-    # Parameter initialisation.
-    # TODO: which parameters are (un)necessary?
-    datatype = parameters["datatype"]  # ???
-    samplingFrequency = parameters["samplingFrequency"]  # Sampling frequency in Hertz.
-    channels = parameters["channels"]  # Number of electrodes on the EEG-cap.
-    trainingDataset = parameters["trainingDataset"]  # File containing training data.
+    # TODO necessary IN GUI
+    realtimeTraining = parameters["RealtimeTraining"]
+    decisionWindow = parameters["decisionWindow"]
+    filterbankband = parameters["filterBankband"]
     updateCSP = parameters["updateCSP"]  # Using subject specific CSP filters
     updateCov = parameters["updateCov"]  # Using subject specific covariance matrix
     updateBias = parameters["updateBias"]  # Using subject specific bias
-
     saveTrainingData = parameters["saveTrainingData"]
-    location_eeg1 = parameters["location_eeg1"]
-    location_eeg2 = parameters["location_eeg2"]
 
-    timefr = 10
+    # enkel vragen indien saveTrainingData = True
+    location_eeg1 = parameters["location_eeg1"]         #IN GUI: als default "None"
+    location_eeg2 = parameters["location_eeg2"]         #IN GUI: als default "None"
+    #enkel vragen indien RealtimeTraining = True
+    channels = parameters["Channels"]                   #IN GUI: als default "None"
+    samplingFrequency = parameters["samplingFrequency"] #IN GUI: als default "None"
+    # enkel vragen indien RealtimeTraining = False
+    trainingDataset = parameters["trainingDataset"]     #IN GUI: als default "None"
 
-    print("-***- ", trainingDataset, " -***-" )
-    print("TIMEFRAME: ", timefr, " SECONDS")
 
-    # TODO: nog in parameters plaatsen voor GUI
-    filterbankband = np.array([[12], [30]])
 
-    if saveTrainingData:  # als de data moet worden opgeslagen, vraag naar locatie voor opslag in GUI
-        # vraag naar locatie ee1 en eeg2
-        # location_eeg1 = parameters["location_eeg1"]
-        # location_eeg2 = parameters["location_eeg2"]
-        pass
+    #parameters are unnecessary:
+    #  Parameters that don't change.
+    datatype = np.float32
 
-    # Parameters that don't change.
-    markers = np.array([1, 2])  # First Left, then Right; for training
-    timeframeTraining = 60*samplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
+
+    # #ONLY FOR CROSSVALIDATION! TODO:delete this & change emulator import:
+    # [eeg, attendedEar, samplingFrequency] = loadData(trainingDataset)
+    # training_data, testing_data, training_attended_ear, unused = train_test_split(eeg, attendedEar, test_size=0.25)
+
 
     # TODO: split eeg_data in left and right -> location (in file eeg_emulation)
     # TODO: this emulator code is not used yet.
@@ -67,8 +68,7 @@ def main(parameters):
     eeg_emulator.start()
     # TODO: decent documentation; all info can be found in
     #  https://www.downloads.plux.info/OpenSignals/OpenSignals%20LSL%20Manual.pdf
-    leftOrRight = None
-    eeg = None
+
     # SET-UP LSL Streams + resolve an EEG stream on the lab network
     print("looking for an EEG stream... ")
     streams = resolve_stream('type', 'EEG')
@@ -113,9 +113,24 @@ def main(parameters):
 
     # Start CSP filter and LDA training for later classification.
     print("--- Training filters and LDA... ---")
-    if False in [updateCSP, updateCov, updateBias]:  # Subject independent / dependent (own file)
-        CSP, coefficients, b, f_in_classes = trainFilters(trainingDataset, filterbankBands=filterbankband, timefr=timefr)
-    else:  # Subject dependent.
+    if not realtimeTraining:  #Subject independent / dependent (own file)
+        [eeg, attendedEar, samplingFrequency] = loadData(trainingDataset)
+        samplingFrequency = int(samplingFrequency)
+
+        print("-***- ", trainingDataset, " -***-")
+        print("TIMEFRAME: ", decisionWindow, " SECONDS")
+        # TRAINING WITH LAST 36 MINUTES
+        attendedEar = attendedEar[12:]
+        eeg = eeg[12:, :, :]
+        # removing spikes from data
+        remove_index = np.arange(samplingFrequency)
+        eeg = np.delete(eeg, remove_index, axis=2)
+
+        CSP, coefficients, b, f_in_classes = trainFilters(eeg, attendedEar, fs=samplingFrequency, filterbankBands=filterbankband, timefr=decisionWindow)
+
+        # training_data, unused, training_attended_ear, unused = train_test_split(eeg, attendedEar,test_size=0.25)
+        # CSP, coefficients, b, f_in_classes = trainFilters(training_data, training_attended_ear, fs=samplingFrequency, filterbankBands=filterbankband, timefr=decisionWindow)
+    else:  # Realtime training
         # TODO: replace with audio player code
         # ap = AudioPlayer()
         # ap.set_device(device_name, cardIndex)
@@ -127,6 +142,7 @@ def main(parameters):
         eeg_data = np.squeeze(np.array(data_subject.get('eegTrials')))
         eeg1, eeg2 = group_by_class(eeg_data, attended_ear, 60)
 
+        timeframeTraining = 60 * samplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
 
         print("Concentrate on the left speaker now", flush=True)
         # TODO: start audio for training right ear
@@ -152,26 +168,13 @@ def main(parameters):
         # TODO: replace this with code to stop the audio player
         # ap.stop()
 
-
         if saveTrainingData:
             np.save(location_eeg1, eeg1)
             np.save(location_eeg2, eeg2)
 
-
-        # DONE: better if functions take EEG1 and EEG2, rather than concatenating here
-
         # Train FBCSP and LDA
-        CSPSS, coefSS, bSS, f_in_classes = trainFilters(usingData=False, eeg1=eeg1, eeg2=eeg2, fs=samplingFrequency,
-                                          filterbankBands=filterbankband, timefr=timefr)
-
-        # Train the CSP.
-        if updateCSP:
-            CSP = CSPSS
-        # Train the LDA.
-        if updateCov:
-            coefficients = coefSS
-        if updateBias:
-            b = bSS
+        CSP, coefficients, b, f_in_classes = trainFilters(usingData=False, eeg1=eeg1, eeg2=eeg2, fs=samplingFrequency,
+                                          filterbankBands=filterbankband, timefr=decisionWindow)
 
     # TODO: dedicated plot function.
     eeg_data = []
@@ -189,12 +192,10 @@ def main(parameters):
     first = True
     for nummers in range(1, 25):
         labels.append('Channel ' + str(nummers))
-    testing_data = loadmat(trainingDataset)
-    attendedEar = np.squeeze(np.array(testing_data.get('attendedEar')))
     attendedEar = attendedEar[:12]
     while True:
         # Receive EEG from LSL
-        timeframe_classifying = timefr*samplingFrequency
+        timeframe_classifying = decisionWindow*samplingFrequency
         timeframe_plot = samplingFrequency  # seconds
         for second in range(round(timeframe_classifying/samplingFrequency)):
             eeg, unused = receive_eeg(EEG_inlet, timeframe_plot, datatype=datatype, channels=channels)
@@ -277,13 +278,13 @@ def main(parameters):
                                        label='Training Class 2')
             # plt.legend(("Class 1", "Class 2"))
             plt.title("Feature vectors of 1st and 6th dimension plotted in 2D")
-            f = featplot[-round(60/timefr):]
+            f = featplot[-round(60/decisionWindow):]
             for i in range(int(np.shape(f)[0])):
                 yellow_scat = plt.scatter(f[i][0], f[i][5], color='yellow', label='Test')
             plt.legend(handles=[green_scat, red_scat, yellow_scat])
             plt.show()
             # name = "/Users/neleeeckman/Desktop/testing subjects features/"
-            # name += trainingDataset[:-4] + "/TIMEFR" + str(timefr) + "_MIN" + str(int(count/60))
+            # name += trainingDataset[:-4] + "/TIMEFR" + str(decisionWindow) + "_MIN" + str(int(count/60))
             # plt.savefig(name)
             # plt.close()
 
@@ -313,7 +314,7 @@ def main(parameters):
         if count == 12*60:
             break
 
-    print(100-false*timefr*100/(60*12), "%")
+    print(100-false*decisionWindow*100/(60*12), "%")
 
 
 if __name__ == '__main__':
