@@ -9,7 +9,7 @@ import math
 import os
 
 from pylsl import StreamInlet, resolve_stream, local_clock
-# from audio import LRBalancer, AudioPlayer
+from audio import LRBalancer, AudioPlayer
 from trainFilters import trainFilters
 from receive_eeg import receive_eeg
 from eeg_emulation import emulate
@@ -78,15 +78,38 @@ def main(parameters):
 
     # TODO: unimplemented parameters.
     # stimulusReconstruction = False  # Use of stimulus reconstruction
-    # volumeThreshold = 50  # in percentage
-    # volLeft = 100  # Starting volume in percentage
-    # volRight = 100  # Starting volume in percentage
     # data_subject = loadmat('dataSubject8.mat')
     # trainingDataset = np.squeeze(np.array(data_subject.get('eegTrials')))
     # Where to store eeg data in case of subject specific filtertraining:
 
-    # TODO: unfinished sound code was moved from here to file "Sound".
-    # sound()?
+    # Volume parameters
+    volumeThreshold = 50  # in percentage
+    volLeft = 100  # Starting volume in percentage
+    volRight = 100  # Starting volume in percentage
+
+    # TODO: these are the ALSA related sound settings, to be replaced with
+    #  by your own audio interface building block. Note that the volume
+    #  controls are also ALSA specific, and need to be changed
+    """ SET-UP Headphones """
+    device_name = 'sysdefault'
+    control_name = 'Headphone+LO'
+    cardindex = 0
+
+    wav_fn = os.path.join(os.path.expanduser('~/Desktop'), 'Pilot_1.wav')
+
+    # Playback
+    ap = AudioPlayer()
+
+    ap.set_device(device_name, cardindex)
+    ap.init_play(wav_fn)
+    ap.play()
+
+    # Audio Control
+    lr_bal = LRBalancer()
+    lr_bal.set_control(control_name, device_name, cardindex)
+
+    lr_bal.set_volume_left(volLeft)
+    lr_bal.set_volume_right(volRight)
 
     # Start CSP filter and LDA training for later classification.
     print("--- Training filters and LDA... ---")
@@ -157,6 +180,7 @@ def main(parameters):
     false = 0
     plt.figure("Realtime EEG")
     labels = []
+    previousLeftOrRight = 0
     first = True
     for nummers in range(1, 25):
         labels.append('Channel ' + str(nummers))
@@ -256,6 +280,27 @@ def main(parameters):
 
             plt.figure("Realtime EEG")
 
+        # Faded gain control towards left or right, stops when one channel falls below the volume threshold
+        # Validation: previous decision is the same as this one
+        print(lr_bal.get_volume())
+        if all(np.array(lr_bal.get_volume()) > volumeThreshold) and previousLeftOrRight == leftOrRight:
+            print("---Controlling volume---")
+            if leftOrRight == -1.:
+                if volLeft != 100:
+                    lr_bal.set_volume_left(100)
+                    volLeft = 100
+                print("Right Decrease")
+                volRight = volRight - 5
+                lr_bal.set_volume_right(volRight)
+
+            elif leftOrRight == 1.:
+                if volRight != 100:
+                    lr_bal.set_volume_right(100)
+                    volRight = 100
+                print("Left Decrease")
+                volLeft = volLeft - 5
+                lr_bal.set_volume_left(volLeft)
+        previousLeftOrRight = leftOrRight
         if count == 12*60:
             break
 
