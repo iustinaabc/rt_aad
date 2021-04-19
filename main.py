@@ -9,7 +9,7 @@ import math
 import os
 
 from pylsl import StreamInlet, resolve_stream, local_clock
-from audio import LRBalancer, AudioPlayer
+# from audio import LRBalancer, AudioPlayer
 from trainFilters import trainFilters
 from receive_eeg import receive_eeg
 from eeg_emulation import emulate
@@ -19,7 +19,7 @@ from loadData import loadData
 from group_by_class import group_by_class
 
 PARAMETERS = {"datatype": np.float32, "samplingFrequency": 120, "channels": 24,
-              "trainingDataset": "dataSubject9.mat", "updateCSP": False, "updateCov": False,
+              "trainingDataset": "dataSubject8.mat", "updateCSP": False, "updateCov": False,
               "updateBias": False, "location_eeg1": "/home/rtaad/Desktop/eeg1.npy",
               "location_eeg2": "/home/rtaad/Desktop/eeg2.npy", "saveTrainingData": False}
 
@@ -39,7 +39,7 @@ def main(parameters):
     saveTrainingData = parameters["saveTrainingData"]
     location_eeg1 = parameters["location_eeg1"]
     location_eeg2 = parameters["location_eeg2"]
-    
+
     timefr = 10
 
     print("-***- ", trainingDataset, " -***-" )
@@ -90,57 +90,44 @@ def main(parameters):
     # TODO: these are the ALSA related sound settings, to be replaced with
     #  by your own audio interface building block. Note that the volume
     #  controls are also ALSA specific, and need to be changed
-    """ SET-UP Headphones """
-    device_name = 'sysdefault'
-    control_name = 'Headphone+LO'
-    cardindex = 0
-
-    wav_fn = os.path.join(os.path.expanduser('~/Desktop'), 'Pilot_1.wav')
-
-    # Playback
-    ap = AudioPlayer()
-
-    ap.set_device(device_name, cardindex)
-    ap.init_play(wav_fn)
-    ap.play()
-
-    # Audio Control
-    lr_bal = LRBalancer()
-    lr_bal.set_control(control_name, device_name, cardindex)
-
-    lr_bal.set_volume_left(volLeft)
-    lr_bal.set_volume_right(volRight)
+    # """ SET-UP Headphones """
+    # device_name = 'sysdefault'
+    # control_name = 'Headphone+LO'
+    # cardindex = 0
+    #
+    # wav_fn = os.path.join(os.path.expanduser('~/Desktop'), 'Pilot_1.wav')
+    #
+    # # Playback
+    # ap = AudioPlayer()
+    #
+    # ap.set_device(device_name, cardindex)
+    # ap.init_play(wav_fn)
+    # ap.play()
+    #
+    # # Audio Control
+    # lr_bal = LRBalancer()
+    # lr_bal.set_control(control_name, device_name, cardindex)
+    #
+    # lr_bal.set_volume_left(volLeft)
+    # lr_bal.set_volume_right(volRight)
 
     # Start CSP filter and LDA training for later classification.
     print("--- Training filters and LDA... ---")
     if False in [updateCSP, updateCov, updateBias]:  # Subject independent / dependent (own file)
-        CSP, coefficients, b, f_in_classes = trainFilters(trainingDataset, filterbankBands=filterbankband, timefr = timefr)
+        CSP, coefficients, b, f_in_classes = trainFilters(trainingDataset, filterbankBands=filterbankband, timefr=timefr)
     else:  # Subject dependent.
-        print("Concentrate on the left speaker now", flush=True)
         # TODO: replace with audio player code
         # ap = AudioPlayer()
         # ap.set_device(device_name, cardIndex)
         # ap.init_play(wav_fn)
         # ap.play()
 
-        # TODO: start audio for training left ear
-        startLeft = local_clock()
-        # for p in range(6):
-        #     tempeeg1, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
-        #     if p == 0:
-        #         eeg1 = tempeeg1
-        #     else:
-        #         eeg1 = np.concatenate(eeg1, tempeeg1, axis=2)
-        # TODO: replace this with code to stop the audio player
-        # ap.stop()
         data_subject = loadmat(trainingDataset)
         attended_ear = np.squeeze(np.array(data_subject.get('attendedEar')))
         eeg_data = np.squeeze(np.array(data_subject.get('eegTrials')))
         eeg1, eeg2 = group_by_class(eeg_data, attended_ear, 60)
 
 
-        '''
-        ### Nele 16/04: ###
         print("Concentrate on the left speaker now", flush=True)
         # TODO: start audio for training right ear
         startRight = local_clock()
@@ -164,7 +151,7 @@ def main(parameters):
                 eeg2 = np.concatenate(eeg2, tempeeg2)
         # TODO: replace this with code to stop the audio player
         # ap.stop()
-        '''
+
 
         if saveTrainingData:
             np.save(location_eeg1, eeg1)
@@ -172,7 +159,6 @@ def main(parameters):
 
 
         # DONE: better if functions take EEG1 and EEG2, rather than concatenating here
-        trialSize = 12
 
         # Train FBCSP and LDA
         CSPSS, coefSS, bSS, f_in_classes = trainFilters(usingData=False, eeg1=eeg1, eeg2=eeg2, fs=samplingFrequency,
@@ -305,25 +291,25 @@ def main(parameters):
 
         # Faded gain control towards left or right, stops when one channel falls below the volume threshold
         # Validation: previous decision is the same as this one
-        print(lr_bal.get_volume())
-        if all(np.array(lr_bal.get_volume()) > volumeThreshold) and previousLeftOrRight == leftOrRight:
-            print("---Controlling volume---")
-            if leftOrRight == -1.:
-                if volLeft != 100:
-                    lr_bal.set_volume_left(100)
-                    volLeft = 100
-                print("Right Decrease")
-                volRight = volRight - 5
-                lr_bal.set_volume_right(volRight)
-
-            elif leftOrRight == 1.:
-                if volRight != 100:
-                    lr_bal.set_volume_right(100)
-                    volRight = 100
-                print("Left Decrease")
-                volLeft = volLeft - 5
-                lr_bal.set_volume_left(volLeft)
-        previousLeftOrRight = leftOrRight
+        # print(lr_bal.get_volume())
+        # if all(np.array(lr_bal.get_volume()) > volumeThreshold) and previousLeftOrRight == leftOrRight:
+        #     print("---Controlling volume---")
+        #     if leftOrRight == -1.:
+        #         if volLeft != 100:
+        #             lr_bal.set_volume_left(100)
+        #             volLeft = 100
+        #         print("Right Decrease")
+        #         volRight = volRight - 5
+        #         lr_bal.set_volume_right(volRight)
+        #
+        #     elif leftOrRight == 1.:
+        #         if volRight != 100:
+        #             lr_bal.set_volume_right(100)
+        #             volRight = 100
+        #         print("Left Decrease")
+        #         volLeft = volLeft - 5
+        #         lr_bal.set_volume_left(volLeft)
+        # previousLeftOrRight = leftOrRight
         if count == 12*60:
             break
 

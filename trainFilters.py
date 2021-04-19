@@ -12,6 +12,7 @@ import random
 from sklearn import covariance
 from group_by_class import group_by_class
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
 
 
 def logenergy(y):
@@ -93,20 +94,18 @@ def trainFilters(data="dataSubject8.mat", usingData=True, eeg1=None, eeg2=None, 
 
         [eeg, attendedEar, fs] = loadData(data, params["preprocessing"],
                                                           params["conditions"])
+        # # TRAINING WITH LAST 36 MINUTES
+        # attendedEar = attendedEar[12:]
+        # eeg = eeg[12:, :, :]
+        # # removing spikes from data
+        # remove_index = np.arange(fs)
+        # eeg = np.delete(eeg, remove_index, axis=2)
 
-        # Random subset in trial dimension without repetition of indices
-        # ind = random.sample(list(range(0, len(attendedEar))),
-        #                      k=round(params["preprocessing"]["subset"] * len(attendedEar)))
-        # attendedEar = attendedEar[ind]
-        # eeg = eeg[ind, :, :]
 
-        # TRAINING WITH LAST 36 MINUTES
-        attendedEar = attendedEar[12:]
-        eeg = eeg[12:, :, :]
+        training_data, unused, training_attended_ear, unused = train_test_split(eeg, attendedEar,test_size=0.25)
+        eeg = training_data
+        attendedEar = training_attended_ear
 
-        # removing spikes from data
-        remove_index = np.arange(fs)
-        eeg = np.delete(eeg, remove_index, axis=2)
 
         # apply FB
         eegTemp = eeg  # (24,7200,48) ---> (7200, 24, 48) ===== np.transpose(onze eeg)
