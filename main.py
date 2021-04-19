@@ -39,8 +39,8 @@ def main(parameters):
     saveTrainingData = parameters["saveTrainingData"]
     location_eeg1 = parameters["location_eeg1"]
     location_eeg2 = parameters["location_eeg2"]
-
-    timefr = 6
+    
+    timefr = 10
 
     print("-***- ", trainingDataset, " -***-" )
     print("TIMEFRAME: ", timefr, " SECONDS")
@@ -296,6 +296,10 @@ def main(parameters):
                 yellow_scat = plt.scatter(f[i][0], f[i][5], color='yellow', label='Test')
             plt.legend(handles=[green_scat, red_scat, yellow_scat])
             plt.show()
+            # name = "/Users/neleeeckman/Desktop/testing subjects features/"
+            # name += trainingDataset[:-4] + "/TIMEFR" + str(timefr) + "_MIN" + str(int(count/60))
+            # plt.savefig(name)
+            # plt.close()
 
             plt.figure("Realtime EEG")
 
