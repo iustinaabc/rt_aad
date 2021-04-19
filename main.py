@@ -116,7 +116,13 @@ def main(parameters):
     if False in [updateCSP, updateCov, updateBias]:  # Subject independent / dependent (own file)
         CSP, coefficients, b, f_in_classes = trainFilters(trainingDataset, filterbankBands=filterbankband, timefr = timefr)
     else:  # Subject dependent.
-        print("Concentrate on the left speaker first for 6 minutes", flush=True)
+        print("Concentrate on the left speaker now", flush=True)
+        # TODO: replace with audio player code
+        # ap = AudioPlayer()
+        # ap.set_device(device_name, cardIndex)
+        # ap.init_play(wav_fn)
+        # ap.play()
+
         # TODO: start audio for training left ear
         startLeft = local_clock()
         # for p in range(6):
@@ -130,27 +136,40 @@ def main(parameters):
         data_subject = loadmat(trainingDataset)
         attended_ear = np.squeeze(np.array(data_subject.get('attendedEar')))
         eeg_data = np.squeeze(np.array(data_subject.get('eegTrials')))
-        eeg1, eeg2 = group_by_class(eeg_data, attended_ear)
+        eeg1, eeg2 = group_by_class(eeg_data, attended_ear, 60)
 
-        print("Concentrate on the right speaker now", flush=True)
+
+        '''
+        ### Nele 16/04: ###
+        print("Concentrate on the left speaker now", flush=True)
         # TODO: start audio for training right ear
         startRight = local_clock()
-        # for p in range(6):
-        #     tempeeg2, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
-        #     if p == 0:
-        #         eeg2 = tempeeg2
-        #     else:
-        #         eeg2 = np.concatenate(eeg2, tempeeg2, axis=2)
+        for p in range(6):
+            tempeeg1, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
+            if p == 0:
+                eeg1 = tempeeg1
+            else:
+                eeg1 = np.concatenate(eeg1, tempeeg1)
+        # TODO: replace this with code to stop the audio player
+        # ap.stop()
+
+
+        # TODO: start audio for training right ear
+        print("Concentrate on the right speaker now", flush=True)
+        for p in range(6):
+            tempeeg2, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
+            if p == 0:
+                eeg2 = tempeeg2
+            else:
+                eeg2 = np.concatenate(eeg2, tempeeg2)
+        # TODO: replace this with code to stop the audio player
+        # ap.stop()
+        '''
 
         if saveTrainingData:
             np.save(location_eeg1, eeg1)
             np.save(location_eeg2, eeg2)
 
-        # TODO: replace with audio player code
-        # ap = AudioPlayer()
-        # ap.set_device(device_name, cardIndex)
-        # ap.init_play(wav_fn)
-        # ap.play()
 
         # DONE: better if functions take EEG1 and EEG2, rather than concatenating here
         trialSize = 12
