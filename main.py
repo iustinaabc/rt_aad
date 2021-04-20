@@ -21,7 +21,7 @@ from group_by_class import group_by_class
 from sklearn.model_selection import train_test_split
 
 
-PARAMETERS = {"RealtimeTraining": False, "samplingFrequency": 120, "Channels": 24,
+PARAMETERS = {"RealtimeTraining": True, "samplingFrequency": 120, "Channels": 24,
               "trainingDataset": "dataSubject8.mat",  "decisionWindow": 10, "filterBankband": np.array([[12], [30]]),
               "updateCSP": False, "updateCov": False, "updateBias": False,
               "saveTrainingData": False, "location_eeg1": "/home/rtaad/Desktop/eeg1.npy", "location_eeg2": "/home/rtaad/Desktop/eeg2.npy"}
@@ -39,8 +39,14 @@ def main(parameters):
     saveTrainingData = parameters["saveTrainingData"]
 
     # enkel vragen indien saveTrainingData = True
-    location_eeg1 = parameters["location_eeg1"]         #IN GUI: als default "None"
-    location_eeg2 = parameters["location_eeg2"]         #IN GUI: als default "None"
+    name = os.getcwd()
+    location_eeg1 = name + "/eeg1"
+    location_eeg2 = name + "/eeg2"
+    location_fulleeg = name + "/fulleeg"
+    location_attendedEar = name + "/attendedEar"
+
+    # location_eeg1 = parameters["location_eeg1"]         #IN GUI: als default "None"
+    # location_eeg2 = parameters["location_eeg2"]         #IN GUI: als default "None"
     #enkel vragen indien RealtimeTraining = True
     channels = parameters["Channels"]                   #IN GUI: als default "None"
     samplingFrequency = parameters["samplingFrequency"] #IN GUI: als default "None"
@@ -113,23 +119,26 @@ def main(parameters):
 
     # Start CSP filter and LDA training for later classification.
     print("--- Training filters and LDA... ---")
+    [eeg, attendedEar, samplingFrequency] = loadData(trainingDataset)
+    samplingFrequency = int(samplingFrequency)
     if not realtimeTraining:  #Subject independent / dependent (own file)
-        [eeg, attendedEar, samplingFrequency] = loadData(trainingDataset)
-        samplingFrequency = int(samplingFrequency)
+        # [eeg, attendedEar, samplingFrequency] = loadData(trainingDataset)
+        # samplingFrequency = int(samplingFrequency)
 
         print("-***- ", trainingDataset, " -***-")
         print("TIMEFRAME: ", decisionWindow, " SECONDS")
         # TRAINING WITH LAST 36 MINUTES
-        attendedEar = attendedEar[12:]
+        attendedEarTraining = attendedEar[12:]
         eeg = eeg[12:, :, :]
         # removing spikes from data
         remove_index = np.arange(samplingFrequency)
         eeg = np.delete(eeg, remove_index, axis=2)
 
-        CSP, coefficients, b, f_in_classes = trainFilters(eeg, attendedEar, fs=samplingFrequency, filterbankBands=filterbankband, timefr=decisionWindow)
+        CSP, coefficients, b, f_in_classes = trainFilters(eeg, attendedEarTraining, fs=samplingFrequency, filterbankBands=filterbankband, timefr=decisionWindow)
 
         # training_data, unused, training_attended_ear, unused = train_test_split(eeg, attendedEar,test_size=0.25)
         # CSP, coefficients, b, f_in_classes = trainFilters(training_data, training_attended_ear, fs=samplingFrequency, filterbankBands=filterbankband, timefr=decisionWindow)
+
     else:  # Realtime training
         # TODO: replace with audio player code
         # ap = AudioPlayer()
@@ -137,22 +146,27 @@ def main(parameters):
         # ap.init_play(wav_fn)
         # ap.play()
 
-        data_subject = loadmat(trainingDataset)
-        attended_ear = np.squeeze(np.array(data_subject.get('attendedEar')))
-        eeg_data = np.squeeze(np.array(data_subject.get('eegTrials')))
-        eeg1, eeg2 = group_by_class(eeg_data, attended_ear, 60)
+        # data_subject = loadmat(trainingDataset)
+        # attended_ear = np.squeeze(np.array(data_subject.get('attendedEar')))
+        # eeg_data = np.squeeze(np.array(data_subject.get('eegTrials')))
+        # eeg1, eeg2 = group_by_class(eeg_data, attended_ear, 60)
 
         timeframeTraining = 60 * samplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
 
         print("Concentrate on the left speaker now", flush=True)
         # TODO: start audio for training right ear
+        attendedEarTraining = []
         startRight = local_clock()
         for p in range(6):
             tempeeg1, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
             if p == 0:
                 eeg1 = tempeeg1
+                eeg1 = eeg1[np.newaxis, :]
+                attendedEarTraining.append(1)
             else:
-                eeg1 = np.concatenate(eeg1, tempeeg1)
+                tempeeg1 = tempeeg1[np.newaxis, :]
+                eeg1 = np.concatenate([eeg1, tempeeg1])
+                attendedEarTraining.append(1)
         # TODO: replace this with code to stop the audio player
         # ap.stop()
 
@@ -163,14 +177,22 @@ def main(parameters):
             tempeeg2, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
             if p == 0:
                 eeg2 = tempeeg2
+                eeg2 = eeg2[np.newaxis, :]
+                attendedEarTraining.append(2)
             else:
-                eeg2 = np.concatenate(eeg2, tempeeg2)
+                tempeeg2 = tempeeg2[np.newaxis, :]
+                eeg2 = np.concatenate([eeg2, tempeeg2])
+                attendedEarTraining.append(2)
         # TODO: replace this with code to stop the audio player
         # ap.stop()
 
         if saveTrainingData:
             np.save(location_eeg1, eeg1)
             np.save(location_eeg2, eeg2)
+            np.save(location_attendedEar, attendedEarTraining)
+            fulleeg = np.concatenate([eeg1,eeg2])
+            print(np.shape(fulleeg))
+            np.save(location_fulleeg, fulleeg)
 
         # Train FBCSP and LDA
         CSP, coefficients, b, f_in_classes = trainFilters(usingData=False, eeg1=eeg1, eeg2=eeg2, fs=samplingFrequency,
@@ -247,6 +269,8 @@ def main(parameters):
             plt.axis([None, None, 0, 500])
             plt.legend(labels, bbox_to_anchor=(1.0, 0.5), loc="center left")
             plt.draw()
+            name = os.getcwd() + "/RealtimeEegPlot"
+            plt.savefig(name)
             plt.pause(1/120)
             plt.clf()
             eeg_plot = np.transpose(eeg_plot)
@@ -271,22 +295,24 @@ def main(parameters):
         if count % 60 == 0:
             print("Until minute " + str(int(count/60)) + ": " + str(false))
             plt.figure("feature")
-            for i in range(np.shape(f_in_classes)[1]):
-                green_scat = plt.scatter(f_in_classes[0][i][0], f_in_classes[0][i][5], color='green',
+            for i in range(np.shape(f_in_classes[0])[1]):
+                yellow_scat = plt.scatter(f_in_classes[0][i][0], f_in_classes[0][i][5], color='yellow',
                                          label='Training Class 1')
-                red_scat = plt.scatter(f_in_classes[1][i][0], f_in_classes[1][i][5], color='red',
+            for i in range(np.shape(f_in_classes[1])[1]):
+                orange_scat = plt.scatter(f_in_classes[1][i][0], f_in_classes[1][i][5], color='orange',
                                        label='Training Class 2')
             # plt.legend(("Class 1", "Class 2"))
             plt.title("Feature vectors of 1st and 6th dimension plotted in 2D")
             f = featplot[-round(60/decisionWindow):]
             for i in range(int(np.shape(f)[0])):
-                yellow_scat = plt.scatter(f[i][0], f[i][5], color='yellow', label='Test')
-            plt.legend(handles=[green_scat, red_scat, yellow_scat])
-            plt.show()
+                red_scat = plt.scatter(f[i][0], f[i][5], color='red', label='Test')
+            plt.legend(handles=[yellow_scat, orange_scat, red_scat])
+            # plt.show()
             # name = "/Users/neleeeckman/Desktop/testing subjects features/"
             # name += trainingDataset[:-4] + "/TIMEFR" + str(decisionWindow) + "_MIN" + str(int(count/60))
-            # plt.savefig(name)
-            # plt.close()
+            name = os.getcwd() + "/FeaturePlot"
+            plt.savefig(name)
+            plt.close()
 
             plt.figure("Realtime EEG")
 
