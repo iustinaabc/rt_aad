@@ -24,7 +24,7 @@ from sklearn.model_selection import train_test_split
 PARAMETERS = {"RealtimeTraining": True, "samplingFrequency": 120, "Channels": 24,
               "trainingDataset": "dataSubject8.mat",  "decisionWindow": 10, "filterBankband": np.array([[12], [30]]),
               "updateCSP": False, "updateCov": False, "updateBias": False,
-              "saveTrainingData": False, "location_eeg1": "/home/rtaad/Desktop/eeg1.npy", "location_eeg2": "/home/rtaad/Desktop/eeg2.npy"}
+              "saveTrainingData": True, "location_eeg1": "/home/rtaad/Desktop/eeg1.npy", "location_eeg2": "/home/rtaad/Desktop/eeg2.npy"}
 
 
 def main(parameters):
@@ -68,10 +68,10 @@ def main(parameters):
     # TODO: split eeg_data in left and right -> location (in file eeg_emulation)
     # TODO: this emulator code is not used yet.
     # !! Verify used OS in eeg_emulation??? Start the emulator.
-    eeg_emulator = multiprocessing.Process(target=emulate)
-    eeg_emulator.daemon = True
-    time.sleep(5)
-    eeg_emulator.start()
+    # eeg_emulator = multiprocessing.Process(target=emulate)
+    # eeg_emulator.daemon = True
+    # time.sleep(5)
+    # eeg_emulator.start()
     # TODO: decent documentation; all info can be found in
     #  https://www.downloads.plux.info/OpenSignals/OpenSignals%20LSL%20Manual.pdf
 
@@ -157,7 +157,7 @@ def main(parameters):
         # TODO: start audio for training right ear
         attendedEarTraining = []
         startRight = local_clock()
-        for p in range(6):
+        for p in range(1):
             tempeeg1, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
             if p == 0:
                 eeg1 = tempeeg1
@@ -173,7 +173,7 @@ def main(parameters):
 
         # TODO: start audio for training right ear
         print("Concentrate on the right speaker now", flush=True)
-        for p in range(6):
+        for p in range(1):
             tempeeg2, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
             if p == 0:
                 eeg2 = tempeeg2
@@ -191,7 +191,7 @@ def main(parameters):
             np.save(location_eeg2, eeg2)
             np.save(location_attendedEar, attendedEarTraining)
             fulleeg = np.concatenate([eeg1,eeg2])
-            print(np.shape(fulleeg))
+#            print(np.shape(fulleeg))
             np.save(location_fulleeg, fulleeg)
 
         # Train FBCSP and LDA
@@ -337,7 +337,7 @@ def main(parameters):
         #         volLeft = volLeft - 5
         #         lr_bal.set_volume_left(volLeft)
         # previousLeftOrRight = leftOrRight
-        if count == 12*60:
+        if count == 60:
             break
 
     print(100-false*decisionWindow*100/(60*12), "%")
