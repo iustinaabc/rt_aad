@@ -28,8 +28,8 @@ PARAMETERS = {"RealtimeTraining": True, "samplingFrequency": 120, "Channels": 24
 
 
 def main(parameters):
-    trainingLength = 1 #minutes
-    testingLength = 1 #minutes
+    trainingLength = 3 #minutes
+    testingLength = 3 #minutes
 
     # TODO necessary IN GUI
     realtimeTraining = parameters["RealtimeTraining"]
@@ -51,7 +51,8 @@ def main(parameters):
     # location_eeg2 = parameters["location_eeg2"]         #IN GUI: als default "None"
     #enkel vragen indien RealtimeTraining = True
     channels = parameters["Channels"]                   #IN GUI: als default "None"
-    samplingFrequency = parameters["samplingFrequency"] #IN GUI: als default "None"
+    samplingFrequency = 250
+#    samplingFrequency = parameters["samplingFrequency"] #IN GUI: als default "None"
     # enkel vragen indien RealtimeTraining = False
     trainingDataset = parameters["trainingDataset"]     #IN GUI: als default "None"
 
@@ -121,8 +122,8 @@ def main(parameters):
 
     # Start CSP filter and LDA training for later classification.
     print("--- Training filters and LDA... ---")
-    [eeg, attendedEar, samplingFrequency] = loadData(trainingDataset)
-    samplingFrequency = int(samplingFrequency)
+    [unused, attendedEar, unused] = loadData(trainingDataset)
+#    samplingFrequency = int(samplingFrequency)
     if not realtimeTraining:  #Subject independent / dependent (own file)
         # [eeg, attendedEar, samplingFrequency] = loadData(trainingDataset)
         # samplingFrequency = int(samplingFrequency)
@@ -156,11 +157,13 @@ def main(parameters):
         timeframeTraining = 60 * samplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
 
         print("Concentrate on the left speaker now", flush=True)
+        input("Press enter to continue:")
         # TODO: start audio for training right ear
         attendedEarTraining = []
         startRight = local_clock()
         for p in range(trainingLength):
             tempeeg1, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
+            
             if p == 0:
                 eeg1 = tempeeg1
                 eeg1 = eeg1[np.newaxis, :]
@@ -172,9 +175,10 @@ def main(parameters):
         # TODO: replace this with code to stop the audio player
         # ap.stop()
 
-
+        
         # TODO: start audio for training right ear
         print("Concentrate on the right speaker now", flush=True)
+        input("Press enter to continue:")
         for p in range(trainingLength):
             tempeeg2, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
             if p == 0:
@@ -204,9 +208,12 @@ def main(parameters):
     leftOrRight_data = list()
     eeg_plot = list()
     featplot =[]
+    
+    
 
     """ System Loop """
-    print('---Starting the system---')
+    print('---Starting the realtime aad testing---')
+    input("Press enter to continue:")
     count = 0
     false = 0
     plt.figure("Realtime EEG")
@@ -286,15 +293,17 @@ def main(parameters):
 
         # Calculating how many mistakes were made
         if leftOrRight == -1.:
+            print("LEFT")
             if attendedEar[math.floor((count-1)/60)] == 2:
                 false += 1
-                print("wrong ", count)
+#                print("wrong ", count)
         elif leftOrRight == 1.:
+            print("RIGHT")
             if attendedEar[math.floor((count-1)/60)] == 1:
                 false += 1
-                print("wrong ", count)
+#                print("wrong ", count)
         if count % 60 == 0:
-            print("Until minute " + str(int(count/60)) + ": " + str(false))
+#            print("Until minute " + str(int(count/60)) + ": " + str(false))
             plt.figure("feature")
             for i in range(np.shape(f_in_classes[0])[1]):
                 yellow_scat = plt.scatter(f_in_classes[0][i][0], f_in_classes[0][i][5], color='yellow',
