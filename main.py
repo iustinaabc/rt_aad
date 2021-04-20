@@ -28,6 +28,8 @@ PARAMETERS = {"RealtimeTraining": True, "samplingFrequency": 120, "Channels": 24
 
 
 def main(parameters):
+    trainingLength = 1 #minutes
+    testingLength = 1 #minutes
 
     # TODO necessary IN GUI
     realtimeTraining = parameters["RealtimeTraining"]
@@ -157,7 +159,7 @@ def main(parameters):
         # TODO: start audio for training right ear
         attendedEarTraining = []
         startRight = local_clock()
-        for p in range(1):
+        for p in range(trainingLength):
             tempeeg1, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
             if p == 0:
                 eeg1 = tempeeg1
@@ -173,7 +175,7 @@ def main(parameters):
 
         # TODO: start audio for training right ear
         print("Concentrate on the right speaker now", flush=True)
-        for p in range(1):
+        for p in range(trainingLength):
             tempeeg2, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
             if p == 0:
                 eeg2 = tempeeg2
@@ -191,7 +193,6 @@ def main(parameters):
             np.save(location_eeg2, eeg2)
             np.save(location_attendedEar, attendedEarTraining)
             fulleeg = np.concatenate([eeg1,eeg2])
-#            print(np.shape(fulleeg))
             np.save(location_fulleeg, fulleeg)
 
         # Train FBCSP and LDA
@@ -337,10 +338,10 @@ def main(parameters):
         #         volLeft = volLeft - 5
         #         lr_bal.set_volume_left(volLeft)
         # previousLeftOrRight = leftOrRight
-        if count == 60:
+        if count == testingLength*60:
             break
 
-    print(100-false*decisionWindow*100/(60*12), "%")
+    print(100-false*decisionWindow*100/(60*testingLength), "%")
 
 
 if __name__ == '__main__':
