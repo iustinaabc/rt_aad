@@ -36,7 +36,7 @@ class AudioPlayer:
         List the available ALSA playback devices.
 
         """
-        print(audio.pcms(audio.PCM_PLAYBACK))
+        return audio.pcms(audio.PCM_PLAYBACK)
 
     def set_device(self, device_name, cardindex):
         """
@@ -49,8 +49,8 @@ class AudioPlayer:
 
         """
         self._device = audio.PCM(type=audio.PCM_PLAYBACK,
-                                     device=device_name,
-                                     cardindex=cardindex)
+                                 device=device_name,
+                                 cardindex=cardindex)
 
     def init_play(self, wav_fn):
         """
@@ -149,7 +149,7 @@ class LRBalancer:
             Device name for which to display the available controls.
 
         """
-        print(audio.mixers(device=device_name))
+        print(audio.mixers())
 
     def set_control(self, control_name, device_name, cardindex):
         """
@@ -164,8 +164,8 @@ class LRBalancer:
 
         """
         self.control = audio.Mixer(control=control_name,
-                                       device=device_name,
-                                       cardindex=cardindex)
+                                   device=device_name,
+                                   cardindex=cardindex)
 
     # TODO refactor everything related to left and right as parameter
     def set_volume_left(self, volume):
