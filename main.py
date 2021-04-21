@@ -52,19 +52,17 @@ def main(parameters):
     locationSavingData = parameters["locationSavingData"]
 
     #enkel vragen indien RealtimeTraining = True
-    channels = parameters["Channels"]                   #IN GUI: als default "None"
-    eegSamplingFrequency = parameters["SamplingFrequency"] #IN GUI: als default "None"
+    channels = parameters["Channels"]                       # IN GUI: als default "None"
+    eegSamplingFrequency = parameters["SamplingFrequency"]  # IN GUI: als default "None"
     # enkel vragen indien RealtimeTraining = False
-    trainingDataset = parameters["trainingDataset"]     #IN GUI: als default "None"
+    trainingDataset = parameters["trainingDataset"]         # IN GUI: als default "None"
 
     #  Parameters that don't change.
     datatype = np.float32
 
-
-    # #ONLY FOR CROSSVALIDATION! TODO:delete this & change emulator import:
+    # # ONLY FOR CROSSVALIDATION! TODO:delete this & change emulator import:
     # [eeg, attendedEar, samplingFrequency] = loadData(trainingDataset)
     # training_data, testing_data, training_attended_ear, unused = train_test_split(eeg, attendedEar, test_size=0.25)
-
 
     # TODO: split eeg_data in left and right -> location (in file eeg_emulation)
     # TODO: this emulator code is not used yet.
@@ -120,7 +118,7 @@ def main(parameters):
 
     # Start CSP filter and LDA training for later classification.
     print("--- Training filters and LDA... ---")
-    if not realtimeTraining:  #Subject independent / dependent (own file)
+    if not realtimeTraining:  # Subject independent / dependent (own file)
         [eeg, attendedEar, eegSamplingFrequency] = loadData(trainingDataset)
         eegSamplingFrequency = int(eegSamplingFrequency)
 
@@ -140,7 +138,8 @@ def main(parameters):
         CSP, coefficients, b, f_in_classes = trainFilters(eeg, attendedEarTraining, fs=samplingFrequency, filterbankBands=filterbankband, timefr=decisionWindow)
 
         # training_data, unused, training_attended_ear, unused = train_test_split(eeg, attendedEar,test_size=0.25)
-        # CSP, coefficients, b, f_in_classes = trainFilters(training_data, training_attended_ear, fs=samplingFrequency, filterbankBands=filterbankband, timefr=decisionWindow)
+        # CSP, coefficients, b, f_in_classes = trainFilters(training_data, training_attended_ear, fs=samplingFrequency,
+        # filterbankBands=filterbankband, timefr=decisionWindow)
 
     else:  # Realtime training
         # TODO: replace with audio player code
