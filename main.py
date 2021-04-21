@@ -22,17 +22,20 @@ from group_by_class import group_by_class
 from sklearn.model_selection import train_test_split
 from datetime import datetime
 
+path = os.getcwd()
+path = os.path.join(path, "Realtimedata")
+path = os.path.join(path, "trainingdata1")
 
-PARAMETERS = {"RealtimeTraining": False, "SamplingFrequency": 250, "DownSampledFrequency":120, "Channels": 24,
-              "trainingDataset": "/Users/neleeeckman/Documents/NeleEeckman/KULeuven/P&O BMT/rt_aad/Realtimedata/trainingdata1",
+PARAMETERS = {"RealtimeTraining": False, "SamplingFrequency": 250, "DownSampledFrequency": 120, "Channels": 24,
+              "trainingDataset": path,
               "decisionWindow": 6, "filterBankband": np.array([[12], [30]]),
               "updateCSP": False, "updateCov": False, "updateBias": False,
               "saveTrainingData": True, "locationSavingData": os.getcwd()+"/Realtimedata"}
 
 
 def main(parameters):
-    trainingLength = 1 #minutes
-    testingLength = 1 #minutes
+    trainingLength = 1  # minutes
+    testingLength = 1  # minutes
 
     # TODO necessary IN GUI
     realtimeTraining = parameters["RealtimeTraining"]
@@ -191,7 +194,6 @@ def main(parameters):
         if eegSamplingFrequency != samplingFrequency:
             eeg1 = resampy.resample(eeg1, eegSamplingFrequency, samplingFrequency, axis=2)
             eeg2 = resampy.resample(eeg2, eegSamplingFrequency, samplingFrequency, axis=2)
-
 
         if saveTrainingData:
             now = datetime.now()
