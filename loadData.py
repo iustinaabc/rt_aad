@@ -36,11 +36,11 @@ def loadData(datafile):
         arrays = {}
         for filename in os.listdir(datafile):
             if filename.endswith('.npy'):
-                arrays[filename] = np.load(filename)
-        eeg = arrays["fulleeg"]
-        attendedEar = arrays["attendedEar"]
-        # fs = arrays["fs"]
-        fs = 250
-        print(np.shape(eeg))
+                location = datafile + "/" +filename
+                arrays[filename] = np.load(location)
+        print(arrays)
+        eeg = arrays["fulleeg.npy"]
+        attendedEar = arrays["attendedEar.npy"]
+        fs = arrays["fs.npy"]
 
     return eeg, attendedEar, fs
