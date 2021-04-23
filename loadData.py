@@ -38,8 +38,7 @@ def loadData(datafile):
             if filename.endswith('.npy'):
                 location = datafile + "/" +filename
                 arrays[filename] = np.load(location)
-        print(arrays)
-        eeg = arrays["fulleeg.npy"]
+        eeg = arrays["eeg.npy"]
         attendedEar = arrays["attendedEar.npy"]
         fs = arrays["fs.npy"]
 

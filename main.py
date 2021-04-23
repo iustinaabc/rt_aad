@@ -30,7 +30,8 @@ PARAMETERS = {"RealtimeTraining": False, "SamplingFrequency": 250, "DownSampledF
               "trainingDataset": path,
               "decisionWindow": 6, "filterBankband": np.array([[12], [30]]),
               "updateCSP": False, "updateCov": False, "updateBias": False,
-              "saveTrainingData": True, "locationSavingData": os.getcwd()+"/Realtimedata"}
+              "saveTrainingData": True, "locationSavingTrainingData": os.getcwd()+"/RealtimeTrainingData",
+              "saveTestingData": True, "locationSavingTestingData": os.getcwd()+"/RealtimeTestingData"}
 
 
 def main(parameters):
@@ -46,12 +47,16 @@ def main(parameters):
     updateCSP = parameters["updateCSP"]  # Using subject specific CSP filters
     updateCov = parameters["updateCov"]  # Using subject specific covariance matrix
     updateBias = parameters["updateBias"]  # Using subject specific bias
+
     saveTrainingData = parameters["saveTrainingData"]
-
     # enkel vragen indien saveTrainingData = True
-    locationSavingData = parameters["locationSavingData"]
+    locationSavingTrainingData = parameters["locationSavingTrainingData"]
 
-    #enkel vragen indien RealtimeTraining = True
+    saveTestingData = parameters["saveTestingData"]
+    # enkel vragen indien saveTestingData = True
+    locationSavingTestingData = parameters["locationSavingTestingData"]
+
+    # enkel vragen indien RealtimeTraining = True
     channels = parameters["Channels"]                       # IN GUI: als default "None"
     eegSamplingFrequency = parameters["SamplingFrequency"]  # IN GUI: als default "None"
     # enkel vragen indien RealtimeTraining = False
@@ -119,7 +124,7 @@ def main(parameters):
     # Start CSP filter and LDA training for later classification.
     print("--- Training filters and LDA... ---")
     if not realtimeTraining:  # Subject independent / dependent (own file)
-        [eeg, attendedEar, eegSamplingFrequency] = loadData(trainingDataset)
+        [eeg, attendedEarTraining, eegSamplingFrequency] = loadData(trainingDataset)
         eegSamplingFrequency = int(eegSamplingFrequency)
 
         # RESAMPLING
@@ -128,12 +133,14 @@ def main(parameters):
 
         print("-***- ", trainingDataset, " -***-")
         print("TIMEFRAME: ", decisionWindow, " SECONDS")
-        # TRAINING WITH LAST 36 MINUTES
-        attendedEarTraining = attendedEar[12:]
-        eeg = eeg[12:, :, :]
-        # removing spikes from data
-        remove_index = np.arange(samplingFrequency)
-        eeg = np.delete(eeg, remove_index, axis=2)
+
+        if trainingDataset[:11] == "dataSubject":
+            # TRAINING WITH LAST 36 MINUTES
+            attendedEarTraining = attendedEarTraining[12:]
+            eeg = eeg[12:, :, :]
+            # removing spikes from data
+            remove_index = np.arange(samplingFrequency)
+            eeg = np.delete(eeg, remove_index, axis=2)
 
         CSP, coefficients, b, f_in_classes = trainFilters(eeg, attendedEarTraining, fs=samplingFrequency, filterbankBands=filterbankband, timefr=decisionWindow)
 
@@ -189,7 +196,7 @@ def main(parameters):
         # TODO: replace this with code to stop the audio player
         # ap.stop()
 
-        #RESAMPLING
+        # RESAMPLING
         if eegSamplingFrequency != samplingFrequency:
             eeg1 = resampy.resample(eeg1, eegSamplingFrequency, samplingFrequency, axis=2)
             eeg2 = resampy.resample(eeg2, eegSamplingFrequency, samplingFrequency, axis=2)
@@ -198,20 +205,16 @@ def main(parameters):
             now = datetime.now()
             foldername = now.strftime("%m:%d:%y %H.%M.%S")
             print(foldername)
-            path_realtimedata = os.path.join(locationSavingData, foldername)
+            path_realtimedata = os.path.join(locationSavingTrainingData, foldername)
             if not os.path.exists(path_realtimedata):
                 os.makedirs(path_realtimedata)
 
-            location_eeg1 = path_realtimedata + "/eeg1"
-            location_eeg2 = path_realtimedata + "/eeg2"
-            location_fulleeg = path_realtimedata + "/fulleeg"
+            location_fulleeg = path_realtimedata + "/eeg"
             location_attendedEar = path_realtimedata + "/attendedEar"
             location_fs = path_realtimedata + "/fs"
-            np.save(location_eeg1, eeg1)
-            np.save(location_eeg2, eeg2)
             np.save(location_attendedEar, attendedEarTraining)
             np.save(location_fs, samplingFrequency)
-            fulleeg = np.concatenate([eeg1,eeg2])
+            fulleeg = np.concatenate([eeg1, eeg2])
             np.save(location_fulleeg, fulleeg)
 
         # Train FBCSP and LDA
@@ -243,6 +246,7 @@ def main(parameters):
         timeframe_plot = samplingFrequency  # seconds
         for second in range(round(timeframe_classifying/samplingFrequency)):
             eeg, unused = receive_eeg(EEG_inlet, timeframe_plot, datatype=datatype, channels=channels)
+            eeg_data.append(eeg)
             # RESAMPLING
             if eegSamplingFrequency != samplingFrequency:
                 eeg = resampy.resample(eeg, eegSamplingFrequency, samplingFrequency, axis=2)
@@ -263,7 +267,6 @@ def main(parameters):
             # save results
 
             filtered_eeg = eeg
-            eeg_data.append(filtered_eeg)
             eeg_to_plot = eeg[0]  # first frequencyband
             # eeg_to_plot = eeg[0,4,:] # first frequency band & channel 5
 
@@ -303,22 +306,23 @@ def main(parameters):
         "---Classifying---"
         classify_eeg = np.transpose((np.transpose(classify_eeg)[-timeframe_classifying:]))
         leftOrRight, feat = classifier(classify_eeg, CSP, coefficients, b, filterbankBands=filterbankband)
-        leftOrRight_data.append(leftOrRight)
         featplot.append(feat)
 
         # Calculating how many mistakes were made
         if leftOrRight == -1.:
+            leftOrRight_data.append(1)
             print("LEFT")
             if attendedEarTesting[math.floor((count-1)/60)] == 2:
                 false += 1
-#                print("wrong ", count)
+                # print("wrong ", count)
         elif leftOrRight == 1.:
+            leftOrRight_data.append(2)
             print("RIGHT")
             if attendedEarTesting[math.floor((count-1)/60)] == 1:
                 false += 1
-#                print("wrong ", count)
+                # print("wrong ", count)
         if count % 60 == 0:
-#            print("Until minute " + str(int(count/60)) + ": " + str(false))
+            # print("Until minute " + str(int(count/60)) + ": " + str(false))
             plt.figure("feature")
             for i in range(np.shape(f_in_classes[0])[1]):
                 yellow_scat = plt.scatter(f_in_classes[0][i][0], f_in_classes[0][i][5], color='yellow',
@@ -366,7 +370,20 @@ def main(parameters):
             break
 
     print(100-false*decisionWindow*100/(60*testingLength), "%")
-    #TODO: save testing data (eeg, leftOrRight, fs, ...)
+    # TODO: save testing data (eeg, leftOrRight, fs, ...)
+    if saveTestingData:
+        now = datetime.now()
+        foldername = now.strftime("%m:%d:%y %H.%M.%S")
+        path_realtimedata = os.path.join(locationSavingTestingData, foldername)
+        if not os.path.exists(path_realtimedata):
+            os.makedirs(path_realtimedata)
+
+        location_fulleeg = path_realtimedata + "/eeg"
+        location_attendedEar = path_realtimedata + "/attendedEar"
+        location_fs = path_realtimedata + "/fs"
+        np.save(location_attendedEar, leftOrRight_data)
+        np.save(location_fs, eegSamplingFrequency)
+        np.save(location_fulleeg, eeg_data)
 
 
 if __name__ == '__main__':
