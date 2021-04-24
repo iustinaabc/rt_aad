@@ -99,7 +99,6 @@ def trainFilters(eeg=None, attendedEar=None, usingData=True, eeg1=None, eeg2=Non
                 [2 * params["filterbankBands"][0, band] / fs, 2 * params["filterbankBands"][1, band] / fs]))
             eeg[:, band, :, :] = np.transpose(scipy.signal.filtfilt(lower, upper, np.transpose(eegTemp), axis=0))
             # shape eeg: trials (14) x bands (1) x channels (24) x time (7200)
-            print(np.shape(eeg[:, band, :, :]))
             mean = np.average(eeg[:, band, :, :], 2)  # shape: trials (14) x channels(24)
             means = np.full((eeg.shape[3], eeg.shape[0], eeg.shape[2]), mean) # channels(24) x trials(14) x time(7200)
             means = np.transpose(means, (1, 2, 0))

@@ -14,7 +14,6 @@ from sklearn import covariance
 def CSP(class_covariances, size):
     # Solve the generalized eigenvalue problem resulting in eigenvalues and corresponding eigenvectors and
     # sort them in descending order.
-    print(np.shape(class_covariances[0]))
     eigenvalues, eigenvectors = la.eigh(class_covariances[0], class_covariances[1])
     id_descending = np.argsort(eigenvalues)[::-1]
     eigenvectors = eigenvectors[:, id_descending]
@@ -47,7 +46,6 @@ def trainCSP(X, y, spatial_dim, optmode, covMethod='lwcov'):
              tr: (1-dimensional numpy array) The traceratio of the filtered EEG for each class
 
     """
-    print(y)
     # Initialize
     if optmode != 'ratiotrace':
         optmode = 'ratiotrace'
@@ -55,7 +53,6 @@ def trainCSP(X, y, spatial_dim, optmode, covMethod='lwcov'):
     X1, X2 = group_by_class(X, y, 60)
     X1 = np.transpose(X1, (0, 2, 1))
     X2 = np.transpose(X2, (0, 2, 1))
-    print(np.shape(X1))
 
     if covMethod == 'lwcov':
         first = True
