@@ -22,22 +22,24 @@ from group_by_class import group_by_class
 from sklearn.model_selection import train_test_split
 from datetime import datetime
 
+# path = os.getcwd()
+# path = os.path.join(path, "Realtimedata")
+# path = os.path.join(path, "trainingdata1")
 path = os.getcwd()
-path = os.path.join(path, "Realtimedata")
-path = os.path.join(path, "trainingdata1")
-
-path = "dataSubject8.mat"
+path = os.path.join(path, "RealtimeTrainingData")
+path = os.path.join(path, "dataSubject8")
+# path = "dataSubject8.mat"
 
 PARAMETERS = {"NoTraining": False, "trainingDataset": path,
-              "RealtimeTraining": False, "SamplingFrequency": 250, "DownSampledFrequency": 120, "Channels": 24,
+              "RealtimeTraining": True, "SamplingFrequency": 120, "DownSampledFrequency": 120, "Channels": 24,
               "decisionWindow": 6, "filterBankband": np.array([[12], [30]]),
-              "saveTrainingData": True, "locationSavingTrainingData": os.getcwd()+"/RealtimeTrainingData",
+              "saveTrainingData": False, "locationSavingTrainingData": os.getcwd()+"/RealtimeTrainingData",
               "saveTestingData": False, "locationSavingTestingData": os.getcwd()+"/RealtimeTestingData"}
 
 
 def main(parameters):
     trainingLength = 1  # minutes
-    testingLength = 2  # minutes
+    testingLength = 12  # minutes
 
     # TODO necessary IN GUI
     noTraining = parameters["NoTraining"]
@@ -275,7 +277,6 @@ def main(parameters):
         np.save(location_TrainingFeatures, f_in_classes)
 
 
-
     """ System Loop """
     print('---Starting the realtime aad testing---')
     input("Press enter to continue:")
@@ -293,7 +294,7 @@ def main(parameters):
     first = True
     for nummers in range(1, 25):
         labels.append('Channel ' + str(nummers))
-    [unused, attendedEarTesting, unused] = loadData(trainingDataset, noTraining=False)
+    [unused, attendedEarTesting, unused] = loadData("dataSubject8.mat", noTraining=False)
     attendedEarTesting = attendedEarTesting[:12]
     while True:
         # Receive EEG from LSL
@@ -304,7 +305,7 @@ def main(parameters):
             eeg_data.append(eeg)
             # RESAMPLING
             if eegSamplingFrequency != samplingFrequency:
-                eeg = resampy.resample(eeg, eegSamplingFrequency, samplingFrequency, axis=2)
+                eeg = resampy.resample(eeg, eegSamplingFrequency, samplingFrequency, axis=1)
             '''FILTERING'''
             eegTemp = eeg  # nu afmetingen eeg: shape eeg (24, 5*120)
             eeg = np.zeros((len(filterbankband[0]), np.shape(eeg)[0], np.shape(eeg)[1]), dtype=np.float32)

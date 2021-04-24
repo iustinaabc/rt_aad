@@ -51,9 +51,9 @@ def loadData(datafile, noTraining):
             if filename.endswith('.npy'):
                 location = datafile + "/" + filename
                 arrays[filename] = np.load(location)
-        CSP = arrays["CSP.npy"]
+        CSP = {'W': arrays["CSP.npy"].item().get("W"), 'score': arrays["CSP.npy"].item().get("score"), 'traceratio': arrays["CSP.npy"].item().get("traceratio")}
         coefficients = arrays["coefficient.npy"]
         b = arrays["bias.npy"]
-        f_in_classes = arrays["TrainingFeatures"]
+        f_in_classes = arrays["TrainingFeatures.npy"]
 
         return CSP, coefficients, b, f_in_classes
