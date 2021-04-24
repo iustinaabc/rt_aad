@@ -31,7 +31,7 @@ path = os.path.join(path, "dataSubject8")
 # path = "dataSubject8.mat"
 
 PARAMETERS = {"NoTraining": False, "trainingDataset": path,
-              "RealtimeTraining": True, "SamplingFrequency": 120, "DownSampledFrequency": 120, "Channels": 24,
+              "RealtimeTraining": False, "SamplingFrequency": 120, "DownSampledFrequency": 120, "Channels": 24,
               "decisionWindow": 6, "filterBankband": np.array([[12], [30]]),
               "saveTrainingData": False, "locationSavingTrainingData": os.getcwd()+"/RealtimeTrainingData",
               "saveTestingData": False, "locationSavingTestingData": os.getcwd()+"/RealtimeTestingData"}
