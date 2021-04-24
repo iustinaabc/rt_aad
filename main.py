@@ -204,7 +204,6 @@ def main(parameters):
         if saveTrainingData:
             now = datetime.now()
             foldername = now.strftime("%m:%d:%y %H.%M.%S")
-            print(foldername)
             path_realtimedata = os.path.join(locationSavingTrainingData, foldername)
             if not os.path.exists(path_realtimedata):
                 os.makedirs(path_realtimedata)
@@ -220,6 +219,23 @@ def main(parameters):
         # Train FBCSP and LDA
         CSP, coefficients, b, f_in_classes = trainFilters(usingData=False, eeg1=eeg1, eeg2=eeg2, fs=samplingFrequency,
                                           filterbankBands=filterbankband, timefr=decisionWindow)
+
+    #Saving CSP, coefficents, b and features in classes:
+    if saveTrainingData:
+        now = datetime.now()
+        foldername = now.strftime("%m:%d:%y %H.%M.%S")
+        path_realtimedata = os.path.join(locationSavingTrainingData, foldername)
+        if not os.path.exists(path_realtimedata):
+            os.makedirs(path_realtimedata)
+        location_CSP = path_realtimedata + "/CSP"
+        location_coefficient = path_realtimedata + "/coefficient"
+        location_b = path_realtimedata + "/bias"
+        location_TrainingFeatures = path_realtimedata + "/TrainingFeatures"
+        np.save(location_CSP, CSP)
+        np.save(location_coefficient, coefficients)
+        np.save(location_b, b)
+        np.save(location_TrainingFeatures, f_in_classes)
+
 
     # TODO: dedicated plot function.
     eeg_data = []
