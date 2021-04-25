@@ -106,6 +106,11 @@ class AudioPlayer:
 
         print('AudioPlayer has reached the end of the recording.')
 
+    def pause(self, yesorno):
+        if yesorno:
+            self._device.pause(True)
+        else:
+            self._device.pause(False)
 
     def play(self):
         """
@@ -117,7 +122,6 @@ class AudioPlayer:
         self._playback_daemon.start()
         # communicate that playback start to LSL
         self._marker_outlet.push_sample([self.START_MARKER])
-
 
     def stop(self):
         """
@@ -266,12 +270,16 @@ class LRBalancer:
 def main():
     # playback parameters (tested on Ubuntu 16.04 with Intel HDA audio card)
     device_name = 'sysdefault'
-    control_name = 'Headphone'
-    cardindex = 0 # IA: was 1 initially
-    wav_fn = os.path.join(os.path.expanduser('~/Desktop'),
-                          'Pilot_1.wav')
+    # control_name = 'Headphone'
+    # control_name = "Headphone Jack Sense"
+    control_name = 'Master'
+    cardindex = 0
+    wav_fn = os.path.join(os.path.expanduser('~/Music'),
+                          'Creep.wav')
 
     ap = AudioPlayer()
+
+    ap.list_devices()
 
     ap.set_device(device_name, cardindex)
     ap.init_play(wav_fn)
@@ -288,14 +296,21 @@ def main():
     ap.play()
 
     time.sleep(5)
-    lr_bal.fade_right(LRBalancer.OUT, 5)
     time.sleep(5)
-    lr_bal.fade_left(LRBalancer.OUT, 5)
-    time.sleep(5)
-    lr_bal.fade_right(LRBalancer.IN, 5)
-    time.sleep(5)
-    lr_bal.fade_left(LRBalancer.IN, 5)
-    time.sleep(5)
+    # lr_bal.fade_right(LRBalancer.OUT, 5)
+    # time.sleep(5)
+    # lr_bal.fade_left(LRBalancer.OUT, 5)
+    # time.sleep(5)
+    # lr_bal.fade_right(LRBalancer.IN, 5)
+    # time.sleep(5)
+    # lr_bal.fade_left(LRBalancer.IN, 5)
+    # time.sleep(5)
+
+
+    ap.pause(True)
+    input("enter")
+    ap.pause(False)
+    time.sleep(10)
 
     ap.stop()
 

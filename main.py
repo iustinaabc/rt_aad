@@ -11,6 +11,7 @@ import resampy
 
 from pylsl import StreamInlet, resolve_stream, local_clock
 # from audio import LRBalancer, AudioPlayer
+from audio import LRBalancer, AudioPlayer
 from trainFilters import trainFilters
 from receive_eeg import receive_eeg
 from eeg_emulation import emulate
@@ -102,27 +103,23 @@ def main(parameters):
     # TODO: these are the ALSA related sound settings, to be replaced with
     #  by your own audio interface building block. Note that the volume
     #  controls are also ALSA specific, and need to be changed
-    # """ SET-UP Headphones """
-    # device_name = 'sysdefault'
-    # control_name = 'Headphone+LO'
-    # cardindex = 0
-    #
-    # wav_fn = os.path.join(os.path.expanduser('~/Desktop'), 'Pilot_1.wav')
-    #
-    # # Playback
-    # ap = AudioPlayer()
-    #
-    # ap.set_device(device_name, cardindex)
-    # ap.init_play(wav_fn)
-    # ap.play()
-    #
-    # # Audio Control
-    # lr_bal = LRBalancer()
-    # lr_bal.set_control(control_name, device_name, cardindex)
-    #
-    # lr_bal.set_volume_left(volLeft)
-    # lr_bal.set_volume_right(volRight)
+    """ SET-UP Headphones """
+    device_name = 'sysdefault'
+    control_name = 'Master'
+    cardindex = 0
 
+    wav_fn = os.path.join(os.path.expanduser('~/Music'), 'Creep.wav')
+    # Audio Control
+    lr_bal = LRBalancer()
+    lr_bal.set_control(control_name, device_name, cardindex)
+
+    lr_bal.set_volume_left(volLeft)
+    lr_bal.set_volume_right(volRight)
+    # Start CSP filter and LDA training for later classification.
+    print("--- Training filters and LDA... ---")
+    if not realtimeTraining:  #Subject independent / dependent (own file)
+        [eeg, attendedEar, samplingFrequency] = loadData(trainingDataset)
+        samplingFrequency = int(samplingFrequency)
     """"TRAINING:"""
     if noTraining:
         CSP, coefficients, b, f_in_classes = loadData(trainingDataset, noTraining=True)
@@ -287,6 +284,7 @@ def main(parameters):
     eeg_plot = list()
     featplot =[]
     count = 0
+    left = True
     false = 0
     plt.figure("Realtime EEG")
     labels = []
@@ -297,6 +295,15 @@ def main(parameters):
     [unused, attendedEarTesting, unused] = loadData("dataSubject8.mat", noTraining=False)
     attendedEarTesting = attendedEarTesting[:12]
     while True:
+        if count % 120 == 0:
+            if left:
+                print("Listen to the left")
+                input("Press enter to continue")
+                left = False
+            else:
+                print("Listen to the left")
+                input("Press enter to continue")
+                left = True
         # Receive EEG from LSL
         timeframe_classifying = decisionWindow*samplingFrequency
         timeframe_plot = samplingFrequency  # seconds
