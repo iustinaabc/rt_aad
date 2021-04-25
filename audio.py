@@ -275,7 +275,9 @@ def main():
     control_name = 'Master'
     cardindex = 0
     wav_fn = os.path.join(os.path.expanduser('~/Music'),
-                          'Creep.wav')
+                          'travel.wav')
+    vol_left = 100
+    vol_right = 100
 
     ap = AudioPlayer()
 
@@ -287,8 +289,8 @@ def main():
     lr_bal = LRBalancer()
     lr_bal.set_control(control_name, device_name, cardindex)
 
-    lr_bal.set_volume_left(100)
-    lr_bal.set_volume_right(100)
+    lr_bal.set_volume_left(vol_left)
+    lr_bal.set_volume_right(vol_right)
 
     # wait a little for the LSL receivers to set up
     time.sleep(5)
@@ -296,7 +298,18 @@ def main():
     ap.play()
 
     time.sleep(5)
+    vol_left = 50
+    lr_bal.set_volume_left(vol_left)
     time.sleep(5)
+    vol_left -= 5
+    lr_bal.set_volume_left(vol_left)
+    time.sleep(5)
+    vol_left -= 10
+    lr_bal.set_volume_left(vol_left)
+    time.sleep(15)
+    # vol_left -= 10
+    # lr_bal.set_volume_left(vol_left)
+    # time.sleep(5)
     # lr_bal.fade_right(LRBalancer.OUT, 5)
     # time.sleep(5)
     # lr_bal.fade_left(LRBalancer.OUT, 5)
@@ -306,11 +319,10 @@ def main():
     # lr_bal.fade_left(LRBalancer.IN, 5)
     # time.sleep(5)
 
-
-    ap.pause(True)
-    input("enter")
-    ap.pause(False)
-    time.sleep(10)
+    # ap.pause(True)
+    # input("enter")
+    # ap.pause(False)
+    # time.sleep(10)
 
     ap.stop()
 

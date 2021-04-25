@@ -155,19 +155,17 @@ def main(parameters):
 
         else:
             """Realtime training"""
-            # TODO: replace with audio player code
-            # ap = AudioPlayer()
-            # ap.set_device(device_name, cardIndex)
-            # ap.init_play(wav_fn)
-            # ap.play()
 
             timeframeTraining = 60 * eegSamplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
 
             print("Concentrate on the LEFT speaker", flush=True)
             input("Press enter to continue:")
             # TODO: start audio for training right ear
+            apleft = AudioPlayer()
+            apleft.set_device(device_name, cardindex)
+            apleft.init_play(wav_fn)
+            apleft.play()
             attendedEarTraining = []
-            startRight = local_clock()
             for p in range(trainingLength):
                 if p != 0 and p % 3 == 0:
                     print("Small break")
@@ -182,11 +180,15 @@ def main(parameters):
                     eeg1 = np.concatenate([eeg1, tempeeg1])
                     attendedEarTraining.append(1)
             # TODO: replace this with code to stop the audio player
-            # ap.stop()
+            apleft.stop()
 
-            # TODO: start audio for training right ear
             print("Concentrate on the RIGHT speaker now", flush=True)
             input("Press enter to continue:")
+            # TODO: start audio for training right ear
+            apright = AudioPlayer()
+            apright.set_device(device_name, cardindex)
+            apright.init_play(wav_fn)
+            apright.play()
             for p in range(trainingLength):
                 if p != 0 and p % 3 == 0:
                     print("Small break")
@@ -201,7 +203,7 @@ def main(parameters):
                     eeg2 = np.concatenate([eeg2, tempeeg2])
                     attendedEarTraining.append(2)
             # TODO: replace this with code to stop the audio player
-            # ap.stop()
+            apright.stop()
 
             # RESAMPLING
             if eegSamplingFrequency != samplingFrequency:
@@ -294,6 +296,10 @@ def main(parameters):
         labels.append('Channel ' + str(nummers))
     [unused, attendedEarTesting, unused] = loadData("dataSubject8.mat", noTraining=False)
     attendedEarTesting = attendedEarTesting[:12]
+    aptesting = AudioPlayer()
+    aptesting.set_device(device_name, cardindex)
+    aptesting.init_play(wav_fn)
+    aptesting.play()
     while True:
         if count % 120 == 0:
             if left:
@@ -410,25 +416,25 @@ def main(parameters):
 
         # Faded gain control towards left or right, stops when one channel falls below the volume threshold
         # Validation: previous decision is the same as this one
-        # print(lr_bal.get_volume())
-        # if all(np.array(lr_bal.get_volume()) > volumeThreshold) and previousLeftOrRight == leftOrRight:
-        #     print("---Controlling volume---")
-        #     if leftOrRight == -1.:
-        #         if volLeft != 100:
-        #             lr_bal.set_volume_left(100)
-        #             volLeft = 100
-        #         print("Right Decrease")
-        #         volRight = volRight - 5
-        #         lr_bal.set_volume_right(volRight)
-        #
-        #     elif leftOrRight == 1.:
-        #         if volRight != 100:
-        #             lr_bal.set_volume_right(100)
-        #             volRight = 100
-        #         print("Left Decrease")
-        #         volLeft = volLeft - 5
-        #         lr_bal.set_volume_left(volLeft)
-        # previousLeftOrRight = leftOrRight
+        print(lr_bal.get_volume())
+        if all(np.array(lr_bal.get_volume()) > volumeThreshold) and previousLeftOrRight == leftOrRight:
+            print("---Controlling volume---")
+            if leftOrRight == -1.:
+                if volLeft != 100:
+                    lr_bal.set_volume_left(100)
+                    volLeft = 100
+                print("Right Decrease")
+                volRight = volRight - 5
+                lr_bal.set_volume_right(volRight)
+
+            elif leftOrRight == 1.:
+                if volRight != 100:
+                    lr_bal.set_volume_right(100)
+                    volRight = 100
+                print("Left Decrease")
+                volLeft = volLeft - 5
+                lr_bal.set_volume_left(volLeft)
+        previousLeftOrRight = leftOrRight
         if count == testingLength*60:
             break
 
