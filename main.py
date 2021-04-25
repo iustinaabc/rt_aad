@@ -23,15 +23,12 @@ from group_by_class import group_by_class
 from sklearn.model_selection import train_test_split
 from datetime import datetime
 
-# path = os.getcwd()
-# path = os.path.join(path, "Realtimedata")
-# path = os.path.join(path, "trainingdata1")
 path = os.getcwd()
-path = os.path.join(path, "RealtimeTrainingData")
-path = os.path.join(path, "dataSubject8")
-# path = "dataSubject8.mat"
+path_trainingdata = os.path.join(os.path.join(path, "Realtimedata"), "trainingdata1")
+path_preset = os.path.join(os.path.join(path, "RealtimeTrainingData"), "dataSubject8")
+path_subject8 = "dataSubject8.mat"
 
-PARAMETERS = {"NoTraining": False, "trainingDataset": path,
+PARAMETERS = {"NoTraining": False, "preset": path_preset, "trainingDataset": path_trainingdata,
               "RealtimeTraining": False, "SamplingFrequency": 120, "DownSampledFrequency": 120, "Channels": 24,
               "decisionWindow": 6, "filterBankband": np.array([[12], [30]]),
               "saveTrainingData": False, "locationSavingTrainingData": os.getcwd()+"/RealtimeTrainingData",
@@ -43,28 +40,32 @@ def main(parameters):
     testingLength = 12  # minutes
 
     # TODO necessary IN GUI
+    """No Training"""
     noTraining = parameters["NoTraining"]
-    realtimeTraining = parameters["RealtimeTraining"]
-    decisionWindow = parameters["decisionWindow"]
+    preset = parameters["preset"]
+
+    """Training (both realtime and with existing eeg-file"""
     filterbankband = parameters["filterBankband"]
     samplingFrequency = parameters["DownSampledFrequency"]  # we downsample to this fs
-
+    decisionWindow = parameters["decisionWindow"]
     saveTrainingData = parameters["saveTrainingData"]
-    # enkel vragen indien saveTrainingData = True
-    locationSavingTrainingData = parameters["locationSavingTrainingData"]
+    realtimeTraining = parameters["RealtimeTraining"]
+    if saveTrainingData:
+        locationSavingTrainingData = parameters["locationSavingTrainingData"]
+    """Realtime training"""
+    if realtimeTraining:
+        channels = parameters["Channels"]  # IN GUI: als default "None"
+        eegSamplingFrequency = parameters["SamplingFrequency"]  # IN GUI: als default "None"
+    """Using existing eeg-file"""
+    if not realtimeTraining:
+        trainingDataset = parameters["trainingDataset"]  # IN GUI: als default "None"
 
+    """Testing"""
     saveTestingData = parameters["saveTestingData"]
-    # enkel vragen indien saveTestingData = True
-    locationSavingTestingData = parameters["locationSavingTestingData"]
+    if saveTestingData:
+        locationSavingTestingData = parameters["locationSavingTestingData"]
 
-    # enkel vragen indien RealtimeTraining = True
-    channels = parameters["Channels"]                       # IN GUI: als default "None"
-    eegSamplingFrequency = parameters["SamplingFrequency"]  # IN GUI: als default "None"
-
-    # enkel vragen indien RealtimeTraining = False of als NoTraing = True
-    trainingDataset = parameters["trainingDataset"]         # IN GUI: als default "None"
-
-    #  Parameters that don't change.
+    #  Parameters that don't change --> NOT IN GUI
     datatype = np.float32
     retrain = True
 
