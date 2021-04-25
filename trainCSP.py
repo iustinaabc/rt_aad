@@ -46,7 +46,6 @@ def trainCSP(X, y, spatial_dim, optmode, covMethod='lwcov'):
              tr: (1-dimensional numpy array) The traceratio of the filtered EEG for each class
 
     """
-
     # Initialize
     if optmode != 'ratiotrace':
         optmode = 'ratiotrace'
@@ -55,7 +54,6 @@ def trainCSP(X, y, spatial_dim, optmode, covMethod='lwcov'):
     X1 = np.transpose(X1, (0, 2, 1))
     X2 = np.transpose(X2, (0, 2, 1))
 
-    # TODO: lwcov doesn't work, need to look at it
     if covMethod == 'lwcov':
         first = True
         S = []

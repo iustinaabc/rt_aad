@@ -267,7 +267,7 @@ def main():
     # playback parameters (tested on Ubuntu 16.04 with Intel HDA audio card)
     device_name = 'sysdefault'
     control_name = 'Headphone'
-    cardindex = 1
+    cardindex = 0 # IA: was 1 initially
     wav_fn = os.path.join(os.path.expanduser('~/Desktop'),
                           'Pilot_1.wav')
 
