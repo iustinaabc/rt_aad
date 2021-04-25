@@ -38,7 +38,7 @@ PARAMETERS = {"NoTraining": False, "trainingDataset": path,
 
 
 def main(parameters):
-    trainingLength = 1  # minutes
+    trainingLength = 3  # minutes
     testingLength = 12  # minutes
 
     # TODO necessary IN GUI
@@ -66,7 +66,6 @@ def main(parameters):
     #  Parameters that don't change.
     datatype = np.float32
     retrain = True
-
 
     # # ONLY FOR CROSSVALIDATION! TODO:delete this & change emulator import:
     # [eeg, attendedEar, samplingFrequency] = loadData(trainingDataset, noTraining=False)
@@ -124,7 +123,6 @@ def main(parameters):
     # lr_bal.set_volume_left(volLeft)
     # lr_bal.set_volume_right(volRight)
 
-
     """"TRAINING:"""
     if noTraining:
         CSP, coefficients, b, f_in_classes = loadData(trainingDataset, noTraining=True)
@@ -133,7 +131,7 @@ def main(parameters):
     while retrain:
         # Start CSP filter and LDA training for later classification.
         print("--- Training filters and LDA... ---")
-        if not realtimeTraining:  #Subject independent / dependent (own file)"
+        if not realtimeTraining:  # Subject independent / dependent (own file)"
             [eeg, attendedEarTraining, eegSamplingFrequency] = loadData(trainingDataset, noTraining=False)
             eegSamplingFrequency = int(eegSamplingFrequency)
 
@@ -158,26 +156,25 @@ def main(parameters):
             # CSP, coefficients, b, f_in_classes = trainFilters(training_data, training_attended_ear, fs=samplingFrequency,
             # filterbankBands=filterbankband, timefr=decisionWindow)
 
-        else:   #"Realtime training"
+        else:
+            """Realtime training"""
             # TODO: replace with audio player code
             # ap = AudioPlayer()
             # ap.set_device(device_name, cardIndex)
             # ap.init_play(wav_fn)
             # ap.play()
 
-            # data_subject = loadmat(trainingDataset)
-            # attended_ear = np.squeeze(np.array(data_subject.get('attendedEar')))
-            # eeg_data = np.squeeze(np.array(data_subject.get('eegTrials')))
-            # eeg1, eeg2 = group_by_class(eeg_data, attended_ear, 60)
-
             timeframeTraining = 60 * eegSamplingFrequency  # in samples of each trial with a specific class #seconds*samplingfreq
 
-            print("Concentrate on the left speaker now", flush=True)
+            print("Concentrate on the LEFT speaker", flush=True)
             input("Press enter to continue:")
             # TODO: start audio for training right ear
             attendedEarTraining = []
             startRight = local_clock()
             for p in range(trainingLength):
+                if p != 0 and p % 3 == 0:
+                    print("Small break")
+                    input("Press enter to continue:")
                 tempeeg1, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
                 if p == 0:
                     eeg1 = tempeeg1
@@ -191,9 +188,12 @@ def main(parameters):
             # ap.stop()
 
             # TODO: start audio for training right ear
-            print("Concentrate on the right speaker now", flush=True)
+            print("Concentrate on the RIGHT speaker now", flush=True)
             input("Press enter to continue:")
             for p in range(trainingLength):
+                if p != 0 and p % 3 == 0:
+                    print("Small break")
+                    input("Press enter to continue:")
                 tempeeg2, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
                 if p == 0:
                     eeg2 = tempeeg2
