@@ -44,7 +44,7 @@ def main(parameters):
     noTraining = parameters["NoTraining"]
     preset = parameters["preset"]
 
-    """Training (both realtime and with existing eeg-file"""
+    """Training (both realtime and with existing eeg-file)"""
     filterbankband = parameters["filterBankband"]
     samplingFrequency = parameters["DownSampledFrequency"]  # we downsample to this fs
     decisionWindow = parameters["decisionWindow"]
