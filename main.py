@@ -314,7 +314,7 @@ def main(parameters):
                 aptesting.pause(False)
                 left = False
             else:
-                print("Listen to the left")
+                print("Listen to the right")
                 aptesting.pause(True)
                 input("Press enter to continue")
                 aptesting.pause(False)
