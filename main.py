@@ -169,8 +169,10 @@ def main(parameters):
             attendedEarTraining = []
             for p in range(trainingLength):
                 if p != 0 and p % 3 == 0:
+                    apleft.pause(True)
                     print("Small break")
                     input("Press enter to continue:")
+                    apleft.pause(False)
                 tempeeg1, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
                 if p == 0:
                     eeg1 = tempeeg1
@@ -193,7 +195,9 @@ def main(parameters):
             for p in range(trainingLength):
                 if p != 0 and p % 3 == 0:
                     print("Small break")
+                    apright.pause(True)
                     input("Press enter to continue:")
+                    apright.pause(False)
                 tempeeg2, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
                 if p == 0:
                     eeg2 = tempeeg2
@@ -305,11 +309,15 @@ def main(parameters):
         if count % 120 == 0:
             if left:
                 print("Listen to the left")
+                aptesting.pause(True)
                 input("Press enter to continue")
+                aptesting.pause(False)
                 left = False
             else:
                 print("Listen to the left")
+                aptesting.pause(True)
                 input("Press enter to continue")
+                aptesting.pause(False)
                 left = True
         # Receive EEG from LSL
         timeframe_classifying = decisionWindow*samplingFrequency
@@ -437,6 +445,7 @@ def main(parameters):
                 lr_bal.set_volume_left(volLeft)
         previousLeftOrRight = leftOrRight
         if count == testingLength*60:
+            aptesting.stop()
             break
 
     print(100-false*decisionWindow*100/(60*testingLength), "%")
