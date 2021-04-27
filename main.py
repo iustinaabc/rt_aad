@@ -123,7 +123,7 @@ def main(parameters):
         samplingFrequency = int(samplingFrequency)
     """"TRAINING:"""
     if noTraining:
-        CSP, coefficients, b, f_in_classes = loadData(trainingDataset, noTraining=True)
+        CSP, coefficients, b, f_in_classes = loadData(preset, noTraining=True)
         retrain = False
 
     while retrain:
