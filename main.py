@@ -118,7 +118,7 @@ def main(parameters):
     lr_bal.set_volume_right(volRight)
     # Start CSP filter and LDA training for later classification.
     print("--- Training filters and LDA... ---")
-    if not realtimeTraining:  #Subject independent / dependent (own file)
+    if not realtimeTraining:  # Subject independent / dependent (own file)
         [eeg, attendedEar, samplingFrequency] = loadData(trainingDataset)
         samplingFrequency = int(samplingFrequency)
     """"TRAINING:"""
@@ -252,19 +252,19 @@ def main(parameters):
         response = input("Continue to realtime testing?"+"\r\n"+" [y/n]:")
         if response == "y" or response == "Y":
             retrain = False
-        ##RETRAINING:
+        # RETRAINING:
         elif response == 'n' or response == "N":
-            ##REALTIME TRAINING
+            # REALTIME TRAINING
             if realtimeTraining:
                 response = input("Do you want to continue using realtime training? [y/n]:")
                 if response == 'n' or response == "N":
                     realtimeTraining = False
                     trainingDataset = input("Enter new path for training dataset")
-            ##NOT REALTIME TRAINING
+            # NOT REALTIME TRAINING
             else:
                 trainingDataset = input("Enter new path for training dataset")
 
-    #Saving CSP, coefficents, b and features in classes:
+    # Saving CSP, coefficents, b and features in classes:
     if saveTrainingData:
         now = datetime.now()
         foldername = now.strftime("%m:%d:%y %H.%M.%S")
@@ -279,7 +279,6 @@ def main(parameters):
         np.save(location_coefficient, coefficients)
         np.save(location_b, b)
         np.save(location_TrainingFeatures, f_in_classes)
-
 
     """ System Loop """
     print('---Starting the realtime aad testing---')
@@ -427,22 +426,30 @@ def main(parameters):
         # Validation: previous decision is the same as this one
         print(lr_bal.get_volume())
         if all(np.array(lr_bal.get_volume()) > volumeThreshold) and previousLeftOrRight == leftOrRight:
-            print("---Controlling volume---")
+            # print("---Controlling volume---")
             if leftOrRight == -1.:
-                if volLeft != 100:
-                    lr_bal.set_volume_left(100)
+                if volLeft <= 75:
+                    volLeft += 25
+                elif volLeft > 75:
                     volLeft = 100
-                print("Right Decrease")
-                volRight = volRight - 5
+                if volRight >= 40:
+                    volRight -= 15
+                elif volRight < 40:
+                    volRight = 25
+                lr_bal.set_volume_left(volLeft)
                 lr_bal.set_volume_right(volRight)
 
             elif leftOrRight == 1.:
-                if volRight != 100:
-                    lr_bal.set_volume_right(100)
+                if volRight <= 75:
+                    volRight += 25
+                elif volRight > 75:
                     volRight = 100
-                print("Left Decrease")
-                volLeft = volLeft - 5
+                if volLeft >= 40:
+                    volLeft -= 15
+                elif volLeft < 40:
+                    volLeft = 25
                 lr_bal.set_volume_left(volLeft)
+                lr_bal.set_volume_right(volRight)
         previousLeftOrRight = leftOrRight
         if count == testingLength*60:
             aptesting.stop()
