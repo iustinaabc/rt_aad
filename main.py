@@ -194,8 +194,8 @@ def main(parameters):
             apright.play()
             for p in range(trainingLength):
                 if p != 0 and p % 3 == 0:
-                    print("Small break")
                     apright.pause(True)
+                    print("Small break")
                     input("Press enter to continue:")
                     apright.pause(False)
                 tempeeg2, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)

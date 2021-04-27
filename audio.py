@@ -297,16 +297,62 @@ def main():
 
     ap.play()
 
-    time.sleep(5)
-    vol_left = 50
+    time.sleep(10)
+    print("85 // 100")
+    vol_left -= 15
     lr_bal.set_volume_left(vol_left)
     time.sleep(5)
-    vol_left -= 5
+    print("70 // 100")
+    vol_left -= 15
     lr_bal.set_volume_left(vol_left)
     time.sleep(5)
-    vol_left -= 10
+    print("55 // 100")
+    vol_left -= 15
     lr_bal.set_volume_left(vol_left)
-    time.sleep(15)
+    time.sleep(5)
+    print("40 // 100")
+    vol_left -= 15
+    lr_bal.set_volume_left(vol_left)
+    time.sleep(5)
+    print("25 // 100")
+    vol_left = 25
+    lr_bal.set_volume_left(vol_left)
+    time.sleep(10)
+    print("50 // 85")
+    vol_left += 25
+    vol_right -= 15
+    lr_bal.set_volume_right(vol_right)
+    lr_bal.set_volume_left(vol_left)
+    time.sleep(5)
+    print("75 // 70")
+    vol_left += 25
+    vol_right -= 15
+    lr_bal.set_volume_right(vol_right)
+    lr_bal.set_volume_left(vol_left)
+    time.sleep(5)
+    print("100 // 55")
+    vol_left += 25
+    vol_right -= 15
+    lr_bal.set_volume_right(vol_right)
+    lr_bal.set_volume_left(vol_left)
+    time.sleep(5)
+    print("100 // 25")
+    vol_right = 25
+    lr_bal.set_volume_right(vol_right)
+    time.sleep(5)
+
+    ap.stop()
+
+    # time.sleep(5)
+    # vol_left = 50
+    # lr_bal.set_volume_left(vol_left)
+    # time.sleep(5)
+    # vol_left -= 5
+    # lr_bal.set_volume_left(vol_left)
+    # time.sleep(5)
+    # vol_left -= 10
+    # lr_bal.set_volume_left(vol_left)
+    # time.sleep(15)
     # vol_left -= 10
     # lr_bal.set_volume_left(vol_left)
     # time.sleep(5)
