@@ -23,7 +23,7 @@ def loadData(datafile, noTraining):
             # load data
             data = loadmat(datafile)
             attendedEar = np.squeeze(np.array(data.get('attendedEar')))
-            fs = np.squeeze(data.get('fs'))
+            fs = int(np.squeeze(data.get('fs')))
             # eegTrials is list of cells (trials with dimension time x channel)
             # Convert to numpy array with dimensions trial(48) x channel(24) x time(7200)
 
@@ -41,7 +41,7 @@ def loadData(datafile, noTraining):
                     arrays[filename] = np.load(location)
             eeg = arrays["eeg.npy"]
             attendedEar = arrays["attendedEar.npy"]
-            fs = arrays["fs.npy"]
+            fs = int(arrays["fs.npy"])
 
         return eeg, attendedEar, fs
 
@@ -53,7 +53,10 @@ def loadData(datafile, noTraining):
                 arrays[filename] = np.load(location)
         CSP = {'W': arrays["CSP.npy"].item().get("W"), 'score': arrays["CSP.npy"].item().get("score"), 'traceratio': arrays["CSP.npy"].item().get("traceratio")}
         coefficients = arrays["coefficient.npy"]
-        b = arrays["bias.npy"]
+        b = int(arrays["bias.npy"])
         f_in_classes = arrays["TrainingFeatures.npy"]
+        decisionWindow = int(arrays["DecisionWindow.npy"])
+        fs = int(arrays["fs.npy"])
+        filterbankband = arrays["FilterBankBand.npy"]
 
-        return CSP, coefficients, b, f_in_classes
+        return CSP, coefficients, b, f_in_classes, decisionWindow, fs, filterbankband
