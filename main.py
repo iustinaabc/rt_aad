@@ -463,6 +463,7 @@ def main(parameters):
         location_decisionWindow = path_realtimedata + "/decisionWindow"
         np.save(location_attendedEar, leftOrRight_data)
         np.save(location_fs, eegSamplingFrequency)
+        np.save(location_fulleeg, eeg_data)
         np.save(location_decisionWindow, decisionWindow)
 
 
