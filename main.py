@@ -116,14 +116,13 @@ def main(parameters):
 
     lr_bal.set_volume_left(volLeft)
     lr_bal.set_volume_right(volRight)
-    # Start CSP filter and LDA training for later classification.
-    print("--- Training filters and LDA... ---")
-    if not realtimeTraining:  #Subject independent / dependent (own file)
-        [eeg, attendedEar, samplingFrequency] = loadData(trainingDataset)
-        samplingFrequency = int(samplingFrequency)
     """"TRAINING:"""
     if noTraining:
-        CSP, coefficients, b, f_in_classes = loadData(preset, noTraining=True)
+        CSP, coefficients, b, f_in_classes, decisionWindow, samplingFrequency, filterbankband = loadData(preset, noTraining=True)
+        print("Information:")
+        print("DecisionWindow ", print(decisionWindow))
+        print("SamplingFrequency ", print(samplingFrequency))
+        print("FilterBankband ", print(filterbankband))
         retrain = False
 
     while retrain:
@@ -131,7 +130,7 @@ def main(parameters):
         print("--- Training filters and LDA... ---")
         if not realtimeTraining:  # Subject independent / dependent (own file)"
             [eeg, attendedEarTraining, eegSamplingFrequency] = loadData(trainingDataset, noTraining=False)
-            eegSamplingFrequency = int(eegSamplingFrequency)
+            print(eeg)
 
             # RESAMPLING
             if eegSamplingFrequency != samplingFrequency:
@@ -217,7 +216,7 @@ def main(parameters):
 
             if saveTrainingData:
                 now = datetime.now()
-                foldername = now.strftime("%m:%d:%y %H.%M.%S")
+                foldername = "Realtime TrainingData " + now.strftime("%m:%d:%y %H.%M.%S")
                 path_realtimedata = os.path.join(locationSavingTrainingData, foldername)
                 if not os.path.exists(path_realtimedata):
                     os.makedirs(path_realtimedata)
@@ -267,7 +266,7 @@ def main(parameters):
     #Saving CSP, coefficents, b and features in classes:
     if saveTrainingData:
         now = datetime.now()
-        foldername = now.strftime("%m:%d:%y %H.%M.%S")
+        foldername = "Processed TrainingData " + now.strftime("%m:%d:%y %H.%M.%S")
         path_realtimedata = os.path.join(locationSavingTrainingData, foldername)
         if not os.path.exists(path_realtimedata):
             os.makedirs(path_realtimedata)
@@ -275,10 +274,16 @@ def main(parameters):
         location_coefficient = path_realtimedata + "/coefficient"
         location_b = path_realtimedata + "/bias"
         location_TrainingFeatures = path_realtimedata + "/TrainingFeatures"
+        location_decisionWindow = path_realtimedata + "/DecisionWindow"
+        location_samplingFrequency = path_realtimedata + "/fs"
+        location_filterbankband = path_realtimedata + "/FilterBankBand"
         np.save(location_CSP, CSP)
         np.save(location_coefficient, coefficients)
         np.save(location_b, b)
         np.save(location_TrainingFeatures, f_in_classes)
+        np.save(location_decisionWindow, decisionWindow)
+        np.save(location_samplingFrequency, samplingFrequency)
+        np.save(location_filterbankband, filterbankband)
 
 
     """ System Loop """
@@ -452,7 +457,7 @@ def main(parameters):
     # TODO: save testing data (eeg, leftOrRight, fs, ...)
     if saveTestingData:
         now = datetime.now()
-        foldername = now.strftime("%m:%d:%y %H.%M.%S")
+        foldername = "TestingData " + now.strftime("%m:%d:%y %H.%M.%S")
         path_realtimedata = os.path.join(locationSavingTestingData, foldername)
         if not os.path.exists(path_realtimedata):
             os.makedirs(path_realtimedata)
