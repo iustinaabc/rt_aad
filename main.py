@@ -123,7 +123,7 @@ def main(parameters):
         samplingFrequency = int(samplingFrequency)
     """"TRAINING:"""
     if noTraining:
-        CSP, coefficients, b, f_in_classes = loadData(trainingDataset, noTraining=True)
+        CSP, coefficients, b, f_in_classes = loadData(preset, noTraining=True)
         retrain = False
 
     while retrain:
@@ -460,9 +460,10 @@ def main(parameters):
         location_fulleeg = path_realtimedata + "/eeg"
         location_attendedEar = path_realtimedata + "/attendedEar"
         location_fs = path_realtimedata + "/fs"
+        location_decisionWindow = path_realtimedata + "/decisionWindow"
         np.save(location_attendedEar, leftOrRight_data)
         np.save(location_fs, eegSamplingFrequency)
-        np.save(location_fulleeg, eeg_data)
+        np.save(location_decisionWindow, decisionWindow)
 
 
 if __name__ == '__main__':
