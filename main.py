@@ -94,7 +94,6 @@ def data_training(trainingDataset, filtering):
     filterbankband = filtering["filterbankband"]
 
     [eeg, attendedEarTraining, eegSamplingFrequency] = loadData(trainingDataset, noTraining=False)
-    print(eeg)
 
     # RESAMPLING
     if eegSamplingFrequency != samplingFrequency:
@@ -120,7 +119,6 @@ def data_training(trainingDataset, filtering):
 
 
 def realtime_training(audio, signal, trainingLength, filtering, save_data):
-    """"""
     """PARAMETERS AUDIO"""
     device_name = audio["device_name"]
     cardindex = audio["cardindex"]
@@ -238,7 +236,6 @@ def plot_features(f_in_classes):
 
 
 def save_CSP(locationSavingTrainingData, data):
-
     """PARAMETERS CSP"""
     CSP = data["CSP"]
     coefficients = data["coefficients"]
@@ -316,8 +313,7 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
     first = True
     for nummers in range(1, 25):
         labels.append('Channel ' + str(nummers))
-    [unused, attendedEarTesting, unused] = loadData("dataSubject8.mat", noTraining=False)
-    attendedEarTesting = attendedEarTesting[:12]
+    attendedEarTesting = []
     aptesting = AudioPlayer()
     aptesting.set_device(device_name, cardindex)
     aptesting.init_play(wav_fn)
@@ -329,12 +325,16 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
                 aptesting.pause(True)
                 input("Press enter to continue")
                 aptesting.pause(False)
+                attendedEarTesting.append(1)
+                attendedEarTesting.append(1)
                 left = False
             else:
                 print("Listen to the right")
                 aptesting.pause(True)
                 input("Press enter to continue")
                 aptesting.pause(False)
+                attendedEarTesting.append(2)
+                attendedEarTesting.append(2)
                 left = True
         # Receive EEG from LSL
         timeframe_classifying = decisionWindow * samplingFrequency
@@ -510,6 +510,7 @@ def main(parameters):
     """No Training"""
     noTraining = parameters["NoTraining"]
     preset = parameters["preset"]
+    # channels = parameters["Channels"]
 
     """TRAINING"""
     filtering = {"filterbankband": parameters["filterBankband"],
@@ -528,6 +529,8 @@ def main(parameters):
     """Testing"""
     save_testing_data = {"saveTestingData": parameters["saveTestingData"],
                           "locationSavingTestingData": parameters["locationSavingTestingData"]}
+    # channels = parameters["Channels"]
+
 
     #  Parameters that don't change --> NOT IN GUI
     retrain = True
