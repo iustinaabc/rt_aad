@@ -46,3 +46,37 @@ def emulate():
             # break
             print("ALERT")
             i = 0
+'''
+
+""" ANALYSING TRAINING EEG"""
+from loadData import loadData
+import os
+
+def emulate():
+    # first create a new stream info (here we set the name to BioSemi,
+    # the content-type to EEG, 24 channels, 120 Hz, and float-valued data) The
+    # last value would be the serial number of the device or some other more or
+    # less locally unique identifier for the stream as far as available (you
+    # could also omit it but interrupted connections wouldn't auto-recover)
+    info = StreamInfo('BioSemi', 'EEG', 24, 250, 'float32', 'myuid34234')
+
+    i = 0
+    path = os.getcwd()
+    path_trainingdata = os.path.join(os.path.join(path, "Realtimedata"), "trainingdata2")
+
+    # next make an outlet
+    outlet = StreamOutlet(info)
+    eeg_data, unused, unused2 = loadData(path_trainingdata, noTraining=False)
+
+    while True:
+        print("MINUTE ", str(i+1))
+        for j in range(15000):
+            mysample = np.transpose(np.array(eeg_data)[i])[j]  # 24x1
+            outlet.push_sample(mysample)
+            time.sleep(1/500)
+        i += 1
+        if i == 6:
+            # break
+            print("ALERT")
+            i = 0
+'''
