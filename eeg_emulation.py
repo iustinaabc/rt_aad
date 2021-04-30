@@ -13,7 +13,7 @@ from random import random as rand
 from pylsl import StreamInfo, StreamOutlet
 from group_by_class import group_by_class
 from scipy.io import loadmat
-
+'''
 
 def emulate():
     # first create a new stream info (here we set the name to BioSemi,
@@ -79,4 +79,4 @@ def emulate():
             # break
             print("ALERT")
             i = 0
-'''
+

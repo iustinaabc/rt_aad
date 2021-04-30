@@ -48,19 +48,19 @@ def setup_streams():
 
 def setup_audio():
     # Volume parameters
-    volumeThreshold = 25  # in percentage
-    volLeft = 100  # Starting volume in percentage
-    volRight = 100  # Starting volume in percentage
+    volumeThreshold = 10  # in percentage
+    volLeft = 50  # Starting volume in percentage
+    volRight = 50  # Starting volume in percentage
 
     # TODO: these are the ALSA related sound settings, to be replaced with
     #  by your own audio interface building block. Note that the volume
     #  controls are also ALSA specific, and need to be changed
     """ SET-UP Headphones """
     device_name = 'sysdefault'
-    control_name = 'Master'
-    cardindex = 0
+    control_name = 'Headphone'
+    cardindex = 0 #"PCH"
 
-    wav_fn = os.path.join(os.path.expanduser('~/Music'), 'Creep.wav')
+    wav_fn = os.path.join(os.path.expanduser('~/Desktop'), 'Pilot_1.wav')
     # Audio Control
     lr_bal = LRBalancer()
     lr_bal.set_control(control_name, device_name, cardindex)
@@ -144,17 +144,17 @@ def realtime_training(audio, signal, trainingLength, filtering, save_data):
     input("Press enter to continue:")
 
     """Starting audio"""
-    apleft = AudioPlayer()
-    apleft.set_device(device_name, cardindex)
-    apleft.init_play(wav_fn)
-    apleft.play()
+    ap = AudioPlayer()
+    ap.set_device(device_name, cardindex)
+    ap.init_play(wav_fn)
+    ap.play()
     attendedEarTraining = []
     for p in range(trainingLength):
         if p != 0 and p % 3 == 0:
-            apleft.pause(True)
+            ap.pause(True)
             print("Small break")
             input("Press enter to continue:")
-            apleft.pause(False)
+            ap.pause(False)
         tempeeg1, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
         if p == 0:
             eeg1 = tempeeg1
@@ -164,20 +164,20 @@ def realtime_training(audio, signal, trainingLength, filtering, save_data):
             tempeeg1 = tempeeg1[np.newaxis, :]
             eeg1 = np.concatenate([eeg1, tempeeg1])
             attendedEarTraining.append(1)
-    apleft.stop()
+    ap.stop()
 
     print("Concentrate on the RIGHT speaker now", flush=True)
     input("Press enter to continue:")
-    apright = AudioPlayer()
-    apright.set_device(device_name, cardindex)
-    apright.init_play(wav_fn)
-    apright.play()
+    ap = AudioPlayer()
+    ap.set_device(device_name, cardindex)
+    ap.init_play(wav_fn)
+    ap.play()
     for p in range(trainingLength):
         if p != 0 and p % 3 == 0:
-            apright.pause(True)
+            ap.pause(True)
             print("Small break")
             input("Press enter to continue:")
-            apright.pause(False)
+            ap.pause(False)
         tempeeg2, notused = receive_eeg(EEG_inlet, timeframeTraining, datatype=datatype, channels=channels)
         if p == 0:
             eeg2 = tempeeg2
@@ -187,7 +187,7 @@ def realtime_training(audio, signal, trainingLength, filtering, save_data):
             tempeeg2 = tempeeg2[np.newaxis, :]
             eeg2 = np.concatenate([eeg2, tempeeg2])
             attendedEarTraining.append(2)
-    apright.stop()
+    ap.stop()
 
     # RESAMPLING
     if eegSamplingFrequency != samplingFrequency:
@@ -273,6 +273,8 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
     wav_fn = audio["wav_fn"]
     lr_bal = audio["lr_bal"]
     volumeThreshold = audio["volumeThreshold"]
+    volLeft = audio["volLeft"]
+    volRight = audio["volLeft"]
 
     """PARAMETERS INCOMING SIGNAL"""
     EEG_inlet = signal["EEG_inlet"]
@@ -314,25 +316,26 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
     for nummers in range(1, 25):
         labels.append('Channel ' + str(nummers))
     attendedEarTesting = []
-    aptesting = AudioPlayer()
-    aptesting.set_device(device_name, cardindex)
-    aptesting.init_play(wav_fn)
-    aptesting.play()
+    ap = AudioPlayer()
+    ap.set_device(device_name, cardindex)
+    ap.init_play(wav_fn)
+    ap.play()
+    time.sleep(5)
     while True:
         if count % 120 == 0:
             if left:
                 print("Listen to the left")
-                aptesting.pause(True)
+                ap.pause(True)
                 input("Press enter to continue")
-                aptesting.pause(False)
+                ap.pause(False)
                 attendedEarTesting.append(1)
                 attendedEarTesting.append(1)
                 left = False
             else:
                 print("Listen to the right")
-                aptesting.pause(True)
+                ap.pause(True)
                 input("Press enter to continue")
-                aptesting.pause(False)
+                ap.pause(False)
                 attendedEarTesting.append(2)
                 attendedEarTesting.append(2)
                 left = True
@@ -442,35 +445,35 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
 
         # Faded gain control towards left or right, stops when one channel falls below the volume threshold
         # Validation: previous decision is the same as this one
-        print(lr_bal.get_volume())
-        if previousLeftOrRight == leftOrRight:
-            # print("---Controlling volume---")
-            if leftOrRight == -1.:
-                if volLeft <= 75:
-                    volLeft += 25
-                elif volLeft > 75:
-                    volLeft = 100
-                if volRight >= volumeThreshold + 15:
-                    volRight -= 15
-                elif volRight < volumeThreshold + 15:
-                    volRight = volumeThreshold
-                lr_bal.set_volume_left(volLeft)
-                lr_bal.set_volume_right(volRight)
+#        print(lr_bal.get_volume())
+#        if previousLeftOrRight == leftOrRight:
+#            # print("---Controlling volume---")
+#            if leftOrRight == -1.:
+#                if volLeft <= 75:
+#                    volLeft += 25
+#                elif volLeft > 75:
+#                    volLeft = 100
+#                if volRight >= volumeThreshold + 15:
+#                    volRight -= 15
+#                elif volRight < volumeThreshold + 15:
+#                    volRight = volumeThreshold
+#                lr_bal.set_volume_left(volLeft)
+#                lr_bal.set_volume_right(volRight)
 
-            elif leftOrRight == 1.:
-                if volRight <= 75:
-                    volRight += 25
-                elif volRight > 75:
-                    volRight = 100
-                if volLeft >= volumeThreshold + 15:
-                    volLeft -= 15
-                elif volLeft < volumeThreshold + 15:
-                    volLeft = volumeThreshold + 15
-                lr_bal.set_volume_left(volLeft)
-                lr_bal.set_volume_right(volRight)
-        previousLeftOrRight = leftOrRight
+#            elif leftOrRight == 1.:
+#                if volRight <= 75:
+#                    volRight += 25
+#                elif volRight > 75:
+#                    volRight = 100
+#                if volLeft >= volumeThreshold + 15:
+#                    volLeft -= 15
+#                elif volLeft < volumeThreshold + 15:
+#                    volLeft = volumeThreshold + 15
+#                lr_bal.set_volume_left(volLeft)
+#                lr_bal.set_volume_right(volRight)
+#        previousLeftOrRight = leftOrRight
         if count == testingLength * 60:
-            aptesting.stop()
+            ap.stop()
             break
 
     print(100 - false * decisionWindow * 100 / (60 * testingLength), "%")
@@ -491,20 +494,20 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
 
 
 path = os.getcwd()
-path_trainingdata = os.path.join(os.path.join(path, "Realtimedata"), "trainingdata1")
-path_preset = os.path.join(os.path.join(path, "RealtimeTrainingData"), "dataSubject8")
+path_trainingdata = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Realtime TrainingData 04:30:21 15.46.51")
+path_preset = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Processed TrainingData 04:30:21 15.48.06")
 path_subject8 = "dataSubject8.mat"
 
 PARAMETERS = {"NoTraining": False, "preset": path_preset, "trainingDataset": path_trainingdata,
-              "RealtimeTraining": False, "SamplingFrequency": 120, "DownSampledFrequency": 120, "Channels": 24,
-              "decisionWindow": 6, "filterBankband": np.array([[12], [30]]),
-              "saveTrainingData": False, "locationSavingTrainingData": os.getcwd()+"/RealtimeTrainingData",
-              "saveTestingData": False, "locationSavingTestingData": os.getcwd()+"/RealtimeTestingData"}
+              "RealtimeTraining": True, "SamplingFrequency": 250, "DownSampledFrequency": 250, "Channels": 24,
+              "decisionWindow": 5, "filterBankband": np.array([[12], [30]]),
+              "saveTrainingData": True, "locationSavingTrainingData": os.getcwd()+"/RealtimeTrainingData",
+              "saveTestingData": True, "locationSavingTestingData": os.getcwd()+"/RealtimeTestingData"}
 
 
 def main(parameters):
-    trainingLength = 3  # minutes
-    testingLength = 12  # minutes
+    trainingLength = 6  # minutes
+    testingLength = 4  # minutes
 
     # TODO necessary IN GUI
     """No Training"""
@@ -539,7 +542,7 @@ def main(parameters):
     # [eeg, attendedEar, samplingFrequency] = loadData(trainingDataset, noTraining=False)
     # training_data, testing_data, training_attended_ear, unused = train_test_split(eeg, attendedEar, test_size=0.25)
 
-    setup_emulator()
+#    setup_emulator()
 
     signal["EEG_inlet"] = setup_streams()
     audio = setup_audio()
