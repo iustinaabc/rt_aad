@@ -1,7 +1,19 @@
 import numpy as np
 import os
-
+# from keras.datasets import imdb
 from scipy.io import loadmat
+
+# # save np.load
+# np_load_old = np.load
+#
+# # modify the default parameters of np.load
+# np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
+#
+# # call load_data with allow_pickle implicitly set to true
+# (train_data, train_labels), (test_data, test_labels) = imdb.load_data(num_words=10000)
+#
+# # restore np.load for future normal usage
+# np.load = np_load_old
 
 
 def loadData(datafile, noTraining):
@@ -38,7 +50,7 @@ def loadData(datafile, noTraining):
             for filename in os.listdir(datafile):
                 if filename.endswith('.npy'):
                     location = datafile + "/" +filename
-                    arrays[filename] = np.load(location)
+                    arrays[filename] = np.load(location, allow_pickle=True)
             eeg = arrays["eeg.npy"]
             attendedEar = arrays["attendedEar.npy"]
             fs = int(arrays["fs.npy"])
@@ -50,7 +62,7 @@ def loadData(datafile, noTraining):
         for filename in os.listdir(datafile):
             if filename.endswith('.npy'):
                 location = datafile + "/" + filename
-                arrays[filename] = np.load(location)
+                arrays[filename] = np.load(location, allow_pickle=True)
         CSP = {'W': arrays["CSP.npy"].item().get("W"), 'score': arrays["CSP.npy"].item().get("score"), 'traceratio': arrays["CSP.npy"].item().get("traceratio")}
         coefficients = arrays["coefficient.npy"]
         b = int(arrays["bias.npy"])
