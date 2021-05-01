@@ -11,7 +11,7 @@ import resampy
 
 from pylsl import StreamInlet, resolve_stream, local_clock
 # from audio import LRBalancer, AudioPlayer
-from audio import LRBalancer, AudioPlayer
+# from audio import LRBalancer, AudioPlayer
 from trainFilters import trainFilters
 from receive_eeg import receive_eeg
 from eeg_emulation import emulate
@@ -77,9 +77,9 @@ def no_training(preset):
     CSP, coefficients, b, f_in_classes, decisionWindow, samplingFrequency, filterbankband = loadData(preset,
                                                                                                      noTraining=True)
     print("Information:")
-    print("DecisionWindow ", print(decisionWindow))
-    print("SamplingFrequency ", print(samplingFrequency))
-    print("FilterBankband ", print(filterbankband))
+    print("DecisionWindow ", decisionWindow, " seconds")
+    print("SamplingFrequency ", samplingFrequency, " Hz")
+    print("FilterBankband ", filterbankband)
 
     data = {"CSP": CSP, "coefficients": coefficients, "b": b, "f_in_classes": f_in_classes,
             "decisionWindow": decisionWindow, "samplingFrequency": samplingFrequency, "filterbankband": filterbankband}
@@ -94,6 +94,7 @@ def data_training(trainingDataset, filtering):
     filterbankband = filtering["filterbankband"]
 
     [eeg, attendedEarTraining, eegSamplingFrequency] = loadData(trainingDataset, noTraining=False)
+    # eeg = eeg[:,:22,:]
 
     # RESAMPLING
     if eegSamplingFrequency != samplingFrequency:
@@ -105,7 +106,7 @@ def data_training(trainingDataset, filtering):
     if trainingDataset[:11] == "dataSubject":
         # TRAINING WITH LAST 36 MINUTES
         attendedEarTraining = attendedEarTraining[12:]
-        eeg = eeg[12:, :, :]
+        eeg = eeg[12:, :22, :]
         # removing spikes from data
         remove_index = np.arange(samplingFrequency)
         eeg = np.delete(eeg, remove_index, axis=2)
@@ -196,7 +197,7 @@ def realtime_training(audio, signal, trainingLength, filtering, save_data):
 
     if saveTrainingData:
         now = datetime.now()
-        foldername = "Realtime TrainingData " + now.strftime("%m:%d:%y %H.%M.%S")
+        foldername = "Realtime TrainingData " + now.strftime("%d %b %y %H-%M")
         path_realtimedata = os.path.join(locationSavingTrainingData, foldername)
         if not os.path.exists(path_realtimedata):
             os.makedirs(path_realtimedata)
@@ -246,7 +247,7 @@ def save_CSP(locationSavingTrainingData, data):
     filterbankband = data["filterbankband"]
 
     now = datetime.now()
-    foldername = "Processed TrainingData " + now.strftime("%m:%d:%y %H.%M.%S")
+    foldername = "Processed TrainingData " + now.strftime("%d %b %y %H-%M")
     path_realtimedata = os.path.join(locationSavingTrainingData, foldername)
     if not os.path.exists(path_realtimedata):
         os.makedirs(path_realtimedata)
@@ -267,14 +268,14 @@ def save_CSP(locationSavingTrainingData, data):
 
 
 def testing(audio, signal, testingLength, filtering, classifying, save_data):
-    """PARAMETERS AUDIO"""
-    device_name = audio["device_name"]
-    cardindex = audio["cardindex"]
-    wav_fn = audio["wav_fn"]
-    lr_bal = audio["lr_bal"]
-    volumeThreshold = audio["volumeThreshold"]
-    volLeft = audio["volLeft"]
-    volRight = audio["volLeft"]
+    # """PARAMETERS AUDIO"""
+    # device_name = audio["device_name"]
+    # cardindex = audio["cardindex"]
+    # wav_fn = audio["wav_fn"]
+    # lr_bal = audio["lr_bal"]
+    # volumeThreshold = audio["volumeThreshold"]
+    # volLeft = audio["volLeft"]
+    # volRight = audio["volLeft"]
 
     """PARAMETERS INCOMING SIGNAL"""
     EEG_inlet = signal["EEG_inlet"]
@@ -302,7 +303,6 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
     input("Press enter to continue:")
 
     # TODO: dedicated plot function.
-    eeg_data = []
     leftOrRight_data = list()
     eeg_plot = list()
     featplot = []
@@ -316,26 +316,26 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
     for nummers in range(1, 25):
         labels.append('Channel ' + str(nummers))
     attendedEarTesting = []
-    ap = AudioPlayer()
-    ap.set_device(device_name, cardindex)
-    ap.init_play(wav_fn)
-    ap.play()
-    time.sleep(5)
+    # ap = AudioPlayer()
+    # ap.set_device(device_name, cardindex)
+    # ap.init_play(wav_fn)
+    # ap.play()
+    # time.sleep(2)
     while True:
         if count % 120 == 0:
             if left:
                 print("Listen to the left")
-                ap.pause(True)
-                input("Press enter to continue")
-                ap.pause(False)
+                # ap.pause(True)
+                # input("Press enter to continue")
+                # ap.pause(False)
                 attendedEarTesting.append(1)
                 attendedEarTesting.append(1)
                 left = False
             else:
                 print("Listen to the right")
-                ap.pause(True)
-                input("Press enter to continue")
-                ap.pause(False)
+                # ap.pause(True)
+                # input("Press enter to continue")
+                # ap.pause(False)
                 attendedEarTesting.append(2)
                 attendedEarTesting.append(2)
                 left = True
@@ -344,7 +344,6 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
         timeframe_plot = samplingFrequency  # seconds
         for second in range(round(timeframe_classifying / samplingFrequency)):
             eeg, unused = receive_eeg(EEG_inlet, timeframe_plot, datatype=datatype, channels=channels)
-            eeg_data.append(eeg)
             # RESAMPLING
             if eegSamplingFrequency != samplingFrequency:
                 eeg = resampy.resample(eeg, eegSamplingFrequency, samplingFrequency, axis=1)
@@ -366,7 +365,14 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
 
             filtered_eeg = eeg
             eeg_to_plot = eeg[0]  # first frequencyband
-            # eeg_to_plot = eeg[0,4,:] # first frequency band & channel 5
+            if count%60==0:
+                if count == 60:
+                    eeg_data = eeg_per_minute
+                elif count > 60:
+                    eeg_data = np.concatenate((eeg_data, eeg_per_minute), axis=0)
+                eeg_per_minute = eeg
+            else:
+                eeg_per_minute = np.concatenate((eeg_per_minute, eeg), axis=2)
 
             if first:
                 eeg_plot = eeg_to_plot
@@ -437,6 +443,7 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
             # plt.show()
             # name = "/Users/neleeeckman/Desktop/testing subjects features/"
             # name += trainingDataset[:-4] + "/TIMEFR" + str(decisionWindow) + "_MIN" + str(int(count/60))
+            # name = os.getcwd() + "/FeaturePlot" + " Minute " + str(int(count/60))
             name = os.getcwd() + "/FeaturePlot"
             plt.savefig(name)
             plt.close()
@@ -473,14 +480,14 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
 #                lr_bal.set_volume_right(volRight)
 #        previousLeftOrRight = leftOrRight
         if count == testingLength * 60:
-            ap.stop()
+            # ap.stop()
             break
 
     print(100 - false * decisionWindow * 100 / (60 * testingLength), "%")
     # TODO: save testing data (eeg, leftOrRight, fs, ...)
     if saveTestingData:
         now = datetime.now()
-        foldername = "TestingData " + now.strftime("%m:%d:%y %H.%M.%S")
+        foldername = "TestingData " + now.strftime("%d %b %y %H-%M")
         path_realtimedata = os.path.join(locationSavingTestingData, foldername)
         if not os.path.exists(path_realtimedata):
             os.makedirs(path_realtimedata)
@@ -494,15 +501,15 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
 
 
 path = os.getcwd()
-path_trainingdata = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Realtime TrainingData 04:30:21 15.46.51")
-path_preset = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Processed TrainingData 04:30:21 15.48.06")
+path_trainingdata = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Realtime TrainingData 04_30_21 15_46_51")
+path_preset = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Processed TrainingData 30_04 no audio")
 path_subject8 = "dataSubject8.mat"
 
-PARAMETERS = {"NoTraining": False, "preset": path_preset, "trainingDataset": path_trainingdata,
-              "RealtimeTraining": True, "SamplingFrequency": 250, "DownSampledFrequency": 250, "Channels": 24,
+PARAMETERS = {"NoTraining": True, "preset": path_preset, "trainingDataset": path_trainingdata,
+              "RealtimeTraining": False, "SamplingFrequency": 250, "DownSampledFrequency": 250, "Channels": 24,
               "decisionWindow": 5, "filterBankband": np.array([[12], [30]]),
-              "saveTrainingData": True, "locationSavingTrainingData": os.getcwd()+"/RealtimeTrainingData",
-              "saveTestingData": True, "locationSavingTestingData": os.getcwd()+"/RealtimeTestingData"}
+              "saveTrainingData": False, "locationSavingTrainingData": os.getcwd()+"/RealtimeTrainingData",
+              "saveTestingData": False, "locationSavingTestingData": os.getcwd()+"/RealtimeTestingData"}
 
 
 def main(parameters):
@@ -542,10 +549,10 @@ def main(parameters):
     # [eeg, attendedEar, samplingFrequency] = loadData(trainingDataset, noTraining=False)
     # training_data, testing_data, training_attended_ear, unused = train_test_split(eeg, attendedEar, test_size=0.25)
 
-#    setup_emulator()
+    setup_emulator()
 
     signal["EEG_inlet"] = setup_streams()
-    audio = setup_audio()
+    # audio = setup_audio()
 
     # TODO: unimplemented parameters.
     # stimulusReconstruction = False  # Use of stimulus reconstruction
@@ -593,6 +600,7 @@ def main(parameters):
     if save_training_data["saveTrainingData"]:
         save_CSP(save_training_data["locationSavingTrainingData"], data)
 
+    audio = None
     testing(audio, signal, testingLength, filtering, data, save_testing_data)
 
 

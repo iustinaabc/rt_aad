@@ -62,11 +62,13 @@ def emulate():
 
     i = 0
     path = os.getcwd()
-    path_trainingdata = os.path.join(os.path.join(path, "Realtimedata"), "trainingdata2")
+    path_trainingdata = os.path.join(os.path.join(path, "RealtimeTestingdata"), "TestingData 04_30 zonder audio")
+    # path_trainingdata = os.path.join(os.path.join(path, "Realtimedata"), "trainingdata2")
 
     # next make an outlet
     outlet = StreamOutlet(info)
     eeg_data, unused, unused2 = loadData(path_trainingdata, noTraining=False)
+    # eeg_data = eeg_data[:, :22, :]
 
     while True:
         print("MINUTE ", str(i+1))
@@ -75,7 +77,7 @@ def emulate():
             outlet.push_sample(mysample)
             time.sleep(1/500)
         i += 1
-        if i == 6:
+        if i == np.shape(eeg_data)[0]:
             # break
             print("ALERT")
             i = 0
