@@ -501,20 +501,22 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
 
 
 path = os.getcwd()
+if path.endswith("\GUI"):
+    path = path[:-4]
 path_trainingdata = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Realtime TrainingData 04_30_21 15_46_51")
 path_preset = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Processed TrainingData 30_04 no audio")
 path_subject8 = "dataSubject8.mat"
 
-PARAMETERS = {"NoTraining": True, "preset": path_preset, "trainingDataset": path_trainingdata,
+PARAMETERS = {"trainingLength" : 6, "testingLength" : 4, "NoTraining": True, "preset": path_preset, "trainingDataset": path_trainingdata,
               "RealtimeTraining": False, "SamplingFrequency": 250, "DownSampledFrequency": 250, "Channels": 24,
               "decisionWindow": 5, "filterBankband": np.array([[12], [30]]),
-              "saveTrainingData": False, "locationSavingTrainingData": os.getcwd()+"/RealtimeTrainingData",
-              "saveTestingData": False, "locationSavingTestingData": os.getcwd()+"/RealtimeTestingData"}
+              "saveTrainingData": False, "locationSavingTrainingData": path+"/RealtimeTrainingData",
+              "saveTestingData": False, "locationSavingTestingData": path+"/RealtimeTestingData"}
 
 
 def main(parameters):
-    trainingLength = 6  # minutes
-    testingLength = 4  # minutes
+    trainingLength = parameters["trainingLength"]  # minutes
+    testingLength = parameters["testingLength"] # minutes
 
     # TODO necessary IN GUI
     """No Training"""
