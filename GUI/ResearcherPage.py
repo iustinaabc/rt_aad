@@ -35,7 +35,7 @@ class ResearcherPage(tk.Frame):
     def graphing(self):
 
         # Left graph for real time plotting.
-        image_feat = Image.open("photo/Featurplot.png")
+        image_feat = Image.open("photo/Featureplot.png")
         image_feat = image_feat.resize((450, 350), Image.ANTIALIAS)
         figure_feat = Figure(figsize=(1, 1), dpi=100)
         figure_feat.figimage(image_feat)
@@ -44,7 +44,7 @@ class ResearcherPage(tk.Frame):
         canvas_feat.get_tk_widget().grid(row=1, column=1, sticky="nsew")
 
         # Right graph for feature plotting.
-        image_EEG = Image.open("photo/Featurplot.png")
+        image_EEG = Image.open("photo/Featureplot.png")
         image_EEG = image_EEG.resize((450, 350), Image.ANTIALIAS)
         figure_EEG = Figure(figsize=(1, 1), dpi=100)
         figure_EEG.figimage(image_EEG)

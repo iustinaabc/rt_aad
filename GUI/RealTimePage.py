@@ -23,12 +23,12 @@ class RealTimePage(tk.Frame):
         background_color_two = "#575F6B"
         text_color = "#FFFFFF"
 
-        train_stream_button = tk.Button(self, text="Use data stream", font=largeFont,
+        train_stream_button = tk.Button(self, text="Realtime training", font=largeFont,
                                         background=background_color_one, relief=GROOVE, fg=text_color,
                                         command=lambda: controller.show_frame(TrainStreamPage.TrainStreamPage))
         train_stream_button.pack(fill=BOTH, expand=True)
 
-        train_file_button = tk.Button(self, text="Use data files", font=largeFont,
+        train_file_button = tk.Button(self, text="Training from data file", font=largeFont,
                                       background=background_color_one, relief=GROOVE, fg=text_color,
                                       command=lambda: controller.show_frame(TrainFilePage.TrainFilePage))
         train_file_button.pack(fill=BOTH, expand=True)

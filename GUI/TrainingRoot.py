@@ -24,12 +24,12 @@ class TrainingRoot(tk.Frame):
         background_color_two = "#575F6B"
         text_color = "#FFFFFF"
 
-        real_time_button = tk.Button(self, text="Real time training", font=largeFont,
+        real_time_button = tk.Button(self, text="Training", font=largeFont,
                                      background=background_color_one, relief=GROOVE, fg=text_color,
                                      command=lambda: controller.show_frame(RealTimePage.RealTimePage))
         real_time_button.pack(fill=BOTH, expand=True)
 
-        preset_button = tk.Button(self, text="Use preset", font=largeFont,
+        preset_button = tk.Button(self, text="No training (preprocessed filters)", font=largeFont,
                                   background=background_color_one, relief=GROOVE, fg=text_color,
                                   command=lambda: controller.show_frame(PresetPage.PresetPage))
         preset_button.pack(fill=BOTH, expand=True)
