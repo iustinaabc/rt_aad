@@ -4,8 +4,7 @@ import RealTimePage
 import PresetPage
 import ResearcherPage
 import StartPage
-import TrainFilePage
-import TrainStreamPage
+import TrainStepPage
 import TrainingPage
 import TrainingRoot
 import UserPage
@@ -43,8 +42,8 @@ class GUIMain(tk.Tk):
         self.frames = {}
         for F in (StartPage.StartPage, UserPage.UserPage, ResearcherPage.ResearcherPage,
                   TrainingPage.TrainingPage, TrainingRoot.TrainingRoot,
-                  RealTimePage.RealTimePage, TrainFilePage.TrainFilePage,
-                  TrainStreamPage.TrainStreamPage, PresetPage.PresetPage, DecisionPage.DecisionPage,
+                  RealTimePage.RealTimePage, TrainStepPage.TrainStepPage,
+                  PresetPage.PresetPage, DecisionPage.DecisionPage,
                   InstructionPage.InstructionPage, TestingPage.TestingPage):
 
             frame = F(container, self)

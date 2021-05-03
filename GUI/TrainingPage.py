@@ -6,8 +6,6 @@ import RealTimePage
 import PresetPage
 import ResearcherPage
 import StartPage
-import TrainFilePage
-import TrainStreamPage
 import TrainingPage
 import TrainingRoot
 import UserPage

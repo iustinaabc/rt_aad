@@ -2,14 +2,13 @@ import tkinter as tk
 from tkinter import *
 
 import RealTimePage
-import TrainingPage
 import main
 
 largeFont = ("Verdana", 12)
 normalFont = ("Verdana", 10)
 
 
-class TrainFilePage(tk.Frame):
+class TrainStepPage(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
@@ -24,6 +23,7 @@ class TrainFilePage(tk.Frame):
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, weight=0)
         self.columnconfigure(3, weight=0)
+        self.args = None
 
     def widgets(self, controller):
 
@@ -35,7 +35,8 @@ class TrainFilePage(tk.Frame):
         self.parameter_display.grid(row=0, rowspan=2, column=0, columnspan=2, sticky="nsew")
 
         parameter_button = tk.Button(self, text="Show parameters", font=largeFont,
-                                     background=background_color_two, relief=RAISED, fg=text_color)
+                                     background=background_color_two, relief=RAISED, fg=text_color,
+                                     command=lambda: self.updateArgs())
         parameter_button.grid(row=0, column=2, sticky="nsew")
         self.initialize()
 
@@ -73,11 +74,22 @@ class TrainFilePage(tk.Frame):
             parameters += "\n"
         self.parameter_var.set(parameters)
 
-    def changeParameter(self):
+    def updateArgs(self):
+        """
+        Change NoTraining and RealtimeTraining parameters for main path determination.
+        """
+        if self.args is not None:
+            self.changeParameter("NoTraining : " + str(self.args[0]))
+            self.changeParameter("RealtimeTraining : " + str(self.args[1]))
+
+    def changeParameter(self, args=None):
         """
         Change parameters according to the variable in the entry widget.
         """
-        update = self.update_entry.get()
+        if args is not None:
+            update = args
+        else:
+            update = self.update_entry.get()
         update_splits = update.split()
         parameters = self.parameter_var.get().splitlines()
         self.parameter_var.set("")
