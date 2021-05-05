@@ -182,10 +182,15 @@ def trainFilters(eeg=None, attendedEar=None, usingData=True, eeg1=None, eeg2=Non
             # shape feat: [trials (#minutes) , spatial dim * nb of bands]
 
     """CALCULATE THE COEFFICIENTS"""
+    # mean = np.mean(feat, axis=0)
+    # print("trainfeatmeans", np.shape(mean))
+    # for i in range(np.shape(feat)[0]):
+    #     feat[i] = feat[i]- mean
 
     f_in_classes = group_by_class(feat, labels, timefr)
     mean1 = np.mean(f_in_classes[0], axis=0)
     mean2 = np.mean(f_in_classes[1], axis=0)
+
     # # ###plot training feauture###
     # plt.figure()
     # for i in range(np.shape(f_in_classes[0])[0]):
