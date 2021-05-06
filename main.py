@@ -443,8 +443,8 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
             # plt.show()
             # name = "/Users/neleeeckman/Desktop/testing subjects features/"
             # name += trainingDataset[:-4] + "/TIMEFR" + str(decisionWindow) + "_MIN" + str(int(count/60))
-            # name = os.getcwd() + "/FeaturePlot" + " Minute " + str(int(count/60))
-            name = os.getcwd() + "/FeaturePlot"
+            name = os.getcwd() + "/FeaturePlot" + " Minute " + str(int(count/60))
+            # name = os.getcwd() + "/FeaturePlot"
             plt.savefig(name)
             plt.close()
 
