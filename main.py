@@ -430,10 +430,17 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
             plt.figure("feature")
             for i in range(np.shape(f_in_classes[0])[0]):
                 green_scat = plt.scatter(f_in_classes[0][i][0], f_in_classes[0][i][-1], color='darkseagreen',
+<<<<<<< HEAD
                                          label='Training Left')
             for i in range(np.shape(f_in_classes[1])[0]):
                 orange_scat = plt.scatter(f_in_classes[1][i][0], f_in_classes[1][i][-1], color='orange',
                                           label='Training Right')
+=======
+                                         label='Training Class 1')
+            for i in range(np.shape(f_in_classes[1])[0]):
+                orange_scat = plt.scatter(f_in_classes[1][i][0], f_in_classes[1][i][-1], color='orange',
+                                          label='Training Class 2')
+>>>>>>> d0ab096b0b31a5d7d44daf93afa0facd34dca541
             # plt.legend(("Class 1", "Class 2"))
             plt.title("Feature vectors of 1st and 6th dimension plotted in 2D")
             f = featplot[-round(60 / decisionWindow):]
