@@ -182,8 +182,8 @@ class LRBalancer:
             Volume between 0-100.
 
         """
-        self.control.setvolume(self.__perceptual_conversion(volume),
-                               self._LEFT)
+        self.control.setvolume(volume,
+                               self._LEFT) #  self.__perceptual_conversion(volume),
 
     def get_volume(self):
         """
@@ -202,8 +202,8 @@ class LRBalancer:
             Volume between 0-100.
 
         """
-        self.control.setvolume(self.__perceptual_conversion(volume),
-                               self._RIGHT)
+        self.control.setvolume(volume,
+                               self._RIGHT) # self.__perceptual_conversion(volume),
 
     IN = 0
     OUT = 1
@@ -272,10 +272,10 @@ def main():
     device_name = 'sysdefault'
     # control_name = 'Headphone'
     # control_name = "Headphone Jack Sense"
-    control_name = 'Master'
+    control_name = 'Headphone+LO'
     cardindex = 0
-    wav_fn = os.path.join(os.path.expanduser('~/Music'),
-                          'travel.wav')
+    wav_fn = os.path.join(os.path.expanduser('~/Desktop'),
+                          'Pilot_1.wav')
     vol_left = 100
     vol_right = 100
 

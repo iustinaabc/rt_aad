@@ -10,8 +10,7 @@ import os
 import resampy
 
 from pylsl import StreamInlet, resolve_stream, local_clock
-# from audio import LRBalancer, AudioPlayer
-# from audio import LRBalancer, AudioPlayer
+from audio import LRBalancer, AudioPlayer
 from trainFilters import trainFilters
 from receive_eeg import receive_eeg
 from eeg_emulation import emulate
@@ -48,19 +47,20 @@ def setup_streams():
 
 def setup_audio():
     # Volume parameters
-    volumeThreshold = 10  # in percentage
-    volLeft = 50  # Starting volume in percentage
-    volRight = 50  # Starting volume in percentage
+    volumeThreshold = 60  # in percentage
+    volLeft = 100  # Starting volume in percentage
+    volRight = 100  # Starting volume in percentage
 
     # TODO: these are the ALSA related sound settings, to be replaced with
     #  by your own audio interface building block. Note that the volume
     #  controls are also ALSA specific, and need to be changed
     """ SET-UP Headphones """
     device_name = 'sysdefault'
-    control_name = 'Headphone'
+    control_name = 'Headphone+LO' #'Headphone+LO'
     cardindex = 0 #"PCH"
 
-    wav_fn = os.path.join(os.path.expanduser('~/Desktop'), 'Pilot_1.wav')
+    wav_training = os.path.join(os.path.expanduser('~/Desktop'), 'grimmTales.wav')
+    wav_testing = os.path.join(os.path.expanduser('~/Desktop'), 'Pilot_2.wav')
     # Audio Control
     lr_bal = LRBalancer()
     lr_bal.set_control(control_name, device_name, cardindex)
@@ -69,7 +69,7 @@ def setup_audio():
     lr_bal.set_volume_right(volRight)
 
     audio = {"device_name": device_name, "cardindex": cardindex, "volLeft": volLeft, "volRight": volRight,
-             "volumeThreshold": volumeThreshold, "wav_fn": wav_fn, "lr_bal": lr_bal}
+             "volumeThreshold": volumeThreshold, "wav_training": wav_training, "wav_testing": wav_testing, "lr_bal": lr_bal}
     return audio
 
 
@@ -123,7 +123,7 @@ def realtime_training(audio, signal, trainingLength, filtering, save_data):
     """PARAMETERS AUDIO"""
     device_name = audio["device_name"]
     cardindex = audio["cardindex"]
-    wav_fn = audio["wav_fn"]
+    wav_fn = audio["wav_training"]
 
     """PARAMETERS INCOMING SIGNAL"""
     EEG_inlet = signal["EEG_inlet"]
@@ -222,10 +222,10 @@ def realtime_training(audio, signal, trainingLength, filtering, save_data):
 def plot_features(f_in_classes):
     # "TrainingFeatures PLOT:"
     for i in range(np.shape(f_in_classes[0])[0]):
-        red_scat = plt.scatter(f_in_classes[0][i][0], f_in_classes[0][i][5], color='red',
+        red_scat = plt.scatter(f_in_classes[0][i][0], f_in_classes[0][i][-1], color='red',
                                label='Training Class 1')
     for i in range(np.shape(f_in_classes[1])[0]):
-        green_scat = plt.scatter(f_in_classes[1][i][0], f_in_classes[1][i][5], color='green',
+        green_scat = plt.scatter(f_in_classes[1][i][0], f_in_classes[1][i][-1], color='green',
                                  label='Training Class 2')
     # plt.legend(("Class 1", "Class 2"))
     plt.title("Feature vectors of 1st and 6th dimension plotted in 2D")
@@ -269,13 +269,13 @@ def save_CSP(locationSavingTrainingData, data):
 
 def testing(audio, signal, testingLength, filtering, classifying, save_data):
     # """PARAMETERS AUDIO"""
-    # device_name = audio["device_name"]
-    # cardindex = audio["cardindex"]
-    # wav_fn = audio["wav_fn"]
-    # lr_bal = audio["lr_bal"]
-    # volumeThreshold = audio["volumeThreshold"]
-    # volLeft = audio["volLeft"]
-    # volRight = audio["volLeft"]
+    device_name = audio["device_name"]
+    cardindex = audio["cardindex"]
+    wav_fn = audio["wav_testing"]
+    lr_bal = audio["lr_bal"]
+    volumeThreshold = audio["volumeThreshold"]
+    volLeft = audio["volLeft"]
+    volRight = audio["volLeft"]
 
     """PARAMETERS INCOMING SIGNAL"""
     EEG_inlet = signal["EEG_inlet"]
@@ -316,26 +316,26 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
     for nummers in range(1, 25):
         labels.append('Channel ' + str(nummers))
     attendedEarTesting = []
-    # ap = AudioPlayer()
-    # ap.set_device(device_name, cardindex)
-    # ap.init_play(wav_fn)
-    # ap.play()
-    # time.sleep(2)
+    ap = AudioPlayer()
+    ap.set_device(device_name, cardindex)
+    ap.init_play(wav_fn)
+    ap.play()
+    time.sleep(2)
     while True:
-        if count % 120 == 0:
+        if count % 60 == 0:
             if left:
                 print("Listen to the left")
-                # ap.pause(True)
-                # input("Press enter to continue")
-                # ap.pause(False)
+                ap.pause(True)
+                input("Press enter to continue")
+                ap.pause(False)
                 attendedEarTesting.append(1)
                 attendedEarTesting.append(1)
                 left = False
             else:
                 print("Listen to the right")
-                # ap.pause(True)
-                # input("Press enter to continue")
-                # ap.pause(False)
+                ap.pause(True)
+                input("Press enter to continue")
+                ap.pause(False)
                 attendedEarTesting.append(2)
                 attendedEarTesting.append(2)
                 left = True
@@ -429,16 +429,16 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
             # print("Until minute " + str(int(count/60)) + ": " + str(false))
             plt.figure("feature")
             for i in range(np.shape(f_in_classes[0])[0]):
-                green_scat = plt.scatter(f_in_classes[0][i][0], f_in_classes[0][i][5], color='darkseagreen',
-                                         label='Training Class 1')
+                green_scat = plt.scatter(f_in_classes[0][i][0], f_in_classes[0][i][-1], color='darkseagreen',
+                                         label='Training Left')
             for i in range(np.shape(f_in_classes[1])[0]):
-                orange_scat = plt.scatter(f_in_classes[1][i][0], f_in_classes[1][i][5], color='orange',
-                                          label='Training Class 2')
+                orange_scat = plt.scatter(f_in_classes[1][i][0], f_in_classes[1][i][-1], color='orange',
+                                          label='Training Right')
             # plt.legend(("Class 1", "Class 2"))
             plt.title("Feature vectors of 1st and 6th dimension plotted in 2D")
             f = featplot[-round(60 / decisionWindow):]
             for i in range(int(np.shape(f)[0])):
-                red_scat = plt.scatter(f[i][0], f[i][5], color='red', label='Test')
+                red_scat = plt.scatter(f[i][0], f[i][-1], color='red', label='Test')
             plt.legend(handles=[green_scat, orange_scat, red_scat])
             # plt.show()
             # name = "/Users/neleeeckman/Desktop/testing subjects features/"
@@ -452,35 +452,35 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
 
         # Faded gain control towards left or right, stops when one channel falls below the volume threshold
         # Validation: previous decision is the same as this one
-#        print(lr_bal.get_volume())
-#        if previousLeftOrRight == leftOrRight:
-#            # print("---Controlling volume---")
-#            if leftOrRight == -1.:
-#                if volLeft <= 75:
-#                    volLeft += 25
-#                elif volLeft > 75:
-#                    volLeft = 100
-#                if volRight >= volumeThreshold + 15:
-#                    volRight -= 15
-#                elif volRight < volumeThreshold + 15:
-#                    volRight = volumeThreshold
-#                lr_bal.set_volume_left(volLeft)
-#                lr_bal.set_volume_right(volRight)
+        print(lr_bal.get_volume())
+        if previousLeftOrRight == leftOrRight:
+            # print("---Controlling volume---")
+            if leftOrRight == -1.:
+                if volLeft <= 85:
+                    volLeft += 15
+                elif volLeft > 85:
+                    volLeft = 100
+                if volRight >= volumeThreshold + 10:
+                    volRight -= 10
+                elif volRight < volumeThreshold + 10:
+                    volRight = volumeThreshold
+                lr_bal.set_volume_left(volLeft)
+                lr_bal.set_volume_right(volRight)
 
-#            elif leftOrRight == 1.:
-#                if volRight <= 75:
-#                    volRight += 25
-#                elif volRight > 75:
-#                    volRight = 100
-#                if volLeft >= volumeThreshold + 15:
-#                    volLeft -= 15
-#                elif volLeft < volumeThreshold + 15:
-#                    volLeft = volumeThreshold + 15
-#                lr_bal.set_volume_left(volLeft)
-#                lr_bal.set_volume_right(volRight)
-#        previousLeftOrRight = leftOrRight
+            elif leftOrRight == 1.:
+                if volRight <= 85:
+                    volRight += 15
+                elif volRight > 85:
+                    volRight = 100
+                if volLeft >= volumeThreshold + 15:
+                    volLeft -= 10
+                elif volLeft < volumeThreshold + 10:
+                    volLeft = volumeThreshold + 10
+                lr_bal.set_volume_left(volLeft)
+                lr_bal.set_volume_right(volRight)
+        previousLeftOrRight = leftOrRight
         if count == testingLength * 60:
-            # ap.stop()
+            ap.stop()
             break
 
     print(100 - false * decisionWindow * 100 / (60 * testingLength), "%")
@@ -503,11 +503,11 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
 path = os.getcwd()
 if path.endswith("\GUI"):
     path = path[:-4]
-path_trainingdata = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Realtime TrainingData 04_30_21 15_46_51")
-path_preset = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Processed TrainingData 30_04 no audio")
+path_trainingdata = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Realtime TrainingData 06 May 21 15-00")
+path_preset = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Processed TrainingData 06 May 21 16-19")
 path_subject8 = "dataSubject8.mat"
 
-PARAMETERS = {"trainingLength" : 6, "testingLength" : 4, "NoTraining": True, "preset": path_preset, "trainingDataset": path_trainingdata,
+PARAMETERS = {"trainingLength" : 6, "testingLength" : 2, "NoTraining": False, "preset": path_preset, "trainingDataset": path_trainingdata,
               "RealtimeTraining": False, "SamplingFrequency": 250, "DownSampledFrequency": 250, "Channels": 24,
               "decisionWindow": 5, "filterBankband": np.array([[12], [30]]),
               "saveTrainingData": False, "locationSavingTrainingData": path+"/RealtimeTrainingData",
@@ -551,10 +551,10 @@ def main(parameters):
     # [eeg, attendedEar, samplingFrequency] = loadData(trainingDataset, noTraining=False)
     # training_data, testing_data, training_attended_ear, unused = train_test_split(eeg, attendedEar, test_size=0.25)
 
-    setup_emulator()
+#    setup_emulator()
 
     signal["EEG_inlet"] = setup_streams()
-    # audio = setup_audio()
+    audio = setup_audio()
 
     # TODO: unimplemented parameters.
     # stimulusReconstruction = False  # Use of stimulus reconstruction
@@ -602,7 +602,7 @@ def main(parameters):
     if save_training_data["saveTrainingData"]:
         save_CSP(save_training_data["locationSavingTrainingData"], data)
 
-    audio = None
+#    audio = None
     testing(audio, signal, testingLength, filtering, data, save_testing_data)
 
 
