@@ -85,7 +85,7 @@ def trainFilters(eeg=None, attendedEar=None, usingData=True, eeg1=None, eeg2=Non
 
         # CSP FILTERS
         "csp": {
-            "spatial_dim": 6,  # number of CS patterns to retain (in total, per band) (K)
+            "spatial_dim": 2,  # number of CS patterns to retain (in total, per band) (K)
             "optmode": "ratiotrace"  # optimization mode: 'ratiotrace' or 'traceratio'
         }}
 

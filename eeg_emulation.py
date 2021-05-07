@@ -64,7 +64,7 @@ def emulate():
     path = os.getcwd()
     if path.endswith("GUI"):
         path = path[0:-4]
-    path_trainingdata = os.path.join(os.path.join(path, "RealtimeTestingdata"), "TestingData 04_30 zonder audio")
+    path_trainingdata = os.path.join(os.path.join(path, "RealtimeTestingdata"), "TestingData 06 May 21 15-37")
     # path_trainingdata = os.path.join(os.path.join(path, "Realtimedata"), "trainingdata2")
 
     # next make an outlet

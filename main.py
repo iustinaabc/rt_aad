@@ -322,7 +322,7 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
     ap.play()
     time.sleep(2)
     while True:
-        if count % 60 == 0:
+        if count % 120 == 0:
             if left:
                 print("Listen to the left")
                 ap.pause(True)
@@ -365,6 +365,7 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
 
             filtered_eeg = eeg
             eeg_to_plot = eeg[0]  # first frequencyband
+
             if count%60==0:
                 if count == 60:
                     eeg_data = eeg_per_minute
@@ -480,6 +481,7 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
                 lr_bal.set_volume_right(volRight)
         previousLeftOrRight = leftOrRight
         if count == testingLength * 60:
+            eeg_data = np.concatenate((eeg_data, eeg_per_minute), axis=0)
             ap.stop()
             break
 

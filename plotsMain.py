@@ -23,6 +23,8 @@ from group_by_class import group_by_class
 from sklearn.model_selection import train_test_split
 from datetime import datetime
 
+from sklearn import svm
+
 
 def setup_emulator():
     # TODO: split eeg_data in left and right -> location (in file eeg_emulation)
@@ -94,6 +96,7 @@ def data_training(trainingDataset, filtering):
     filterbankband = filtering["filterbankband"]
 
     [eeg, attendedEarTraining, eegSamplingFrequency] = loadData(trainingDataset, noTraining=False)
+    print(np.shape(eeg))
     # eeg = eeg[:,:22,:]
 
     # RESAMPLING
@@ -480,6 +483,7 @@ def testing(audio, signal, testingLength, filtering, classifying, save_data):
 #                lr_bal.set_volume_right(volRight)
 #        previousLeftOrRight = leftOrRight
         if count == testingLength * 60:
+            eeg_data = np.concatenate((eeg_data, eeg_per_minute), axis=0)
             # ap.stop()
             break
 
@@ -504,17 +508,17 @@ path = os.getcwd()
 if path.endswith("\GUI"):
     path = path[:-4]
 
-path_trainingdata = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Realtime TrainingData 06 May 21 15-00")
-path_testingdata = os.path.join(os.path.join(path, "RealtimeTestingData"), "TestingData 06 May 21 15-37")
+path_trainingdata = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Realtime TrainingData 06 May 21 16-18")
+path_testingdata = os.path.join(os.path.join(path, "RealtimeTestingData"), "TestingData 06 May 21 16-35")
 # path_trainingdata = os.path.join(os.path.join(path, "RealtimeData"), "trainingdata1")
 # path_testingdata = os.path.join(os.path.join(path, "RealtimeData"), "trainingdata2")
 
 
-path_preset = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Processed TrainingData 30_04 no audio")
+path_preset = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Processed TrainingData 06 May 21 15-00 CSP2")
 path_subject8 = "dataSubject8.mat"
 
 PARAMETERS = {"trainingLength" : 6, "testingLength" : 4, "NoTraining": False, "preset": path_preset, "trainingDataset": path_trainingdata,
-              "RealtimeTraining": False, "SamplingFrequency": 250, "DownSampledFrequency": 250, "Channels": 22,
+              "RealtimeTraining": False, "SamplingFrequency": 250, "DownSampledFrequency": 250, "Channels": 24,
               "decisionWindow": 5, "filterBankband": np.array([[12], [30]]),
               "saveTrainingData": False, "locationSavingTrainingData": path+"/RealtimeTrainingData",
               "saveTestingData": False, "locationSavingTestingData": path+"/RealtimeTestingData"}
@@ -523,6 +527,8 @@ PARAMETERS = {"trainingLength" : 6, "testingLength" : 4, "NoTraining": False, "p
 def main(parameters):
     trainingLength = parameters["trainingLength"]  # minutes
     testingLength = parameters["testingLength"] # minutes
+
+    spatialdim = 2
 
     # TODO necessary IN GUI
     """No Training"""
@@ -613,7 +619,10 @@ def main(parameters):
     CSP = data["CSP"]
     coefficients = data["coefficients"]
     b = data["b"]
-    eeg_testing, attendedEar, fs = loadData(path_testingdata, noTraining=False)
+    eeg_testing, unused, fs = loadData(path_testingdata, noTraining=False)
+    attendedEarTesting = [1]*2 + [2]
+
+    print(attendedEarTesting)
     # eeg_testing = eeg_testing[:,:22, :]
 
 
@@ -644,6 +653,7 @@ def main(parameters):
     count = 0
     left_right = []
     decisionWindow = PARAMETERS["decisionWindow"]
+    print(np.shape(eeg_testing))
     print("eeg_testing",np.shape(np.squeeze(eeg_testing[0])))
     print(int(60/decisionWindow))
     for i in range(np.shape(eeg_testing)[0]):
@@ -654,35 +664,52 @@ def main(parameters):
             leftOrRight, testing_features = classifier(eegfeat, CSP, coefficients, b, filterbankBands=filterbankband)
             count +=1
             f.append(testing_features)
-            # left_right.append(leftOrRight)
-            if leftOrRight == -1.:
-                left_right.append(1)
-                if attendedEar[i] == 2:
-                    wrong+=1
-            elif leftOrRight == 1.:
-                left_right.append(2)
-                if attendedEar[i] == 1:
-                    wrong += 1
-    print("wrong ",str(wrong))
-    print("Accuracy ", str(int(100 - 100*wrong/count)), " %")
+            ##--minusMean
+    #         left_right.append(leftOrRight)
+    #         if leftOrRight == -1.:
+    #             left_right.append(1)
+    #             if attendedEarTesting[i] == 2:
+    #                 wrong+=1
+    #         elif leftOrRight == 1.:
+    #             left_right.append(2)
+    #             if attendedEarTesting[i] == 1:
+    #                 wrong += 1
+    # print("wrong ",str(wrong))
+    # print("Accuracy ", str(int(100 - 100*wrong/count)), " %")
 
-    # ftestmean = np.mean(f, axis=0)
+
     # ftrainmean = np.mean(np.mean(f_in_classes,axis=1),axis=0)
     # print(ftrainmean)
-    # print("ftestmean",np.shape(ftestmean))
     # print("ftrainmean", np.shape(ftrainmean))
     # #minus means:
     # for i in range(np.shape(f_in_classes)[1]):
     #     f_in_classes[0][i] = f_in_classes[0][i] - ftrainmean
     #     f_in_classes[1][i] = f_in_classes[1][i] - ftrainmean
-    # for i in range(np.shape(f)[0]):
-    #     f[i] = f[i]- ftestmean
+
+    ftestmean = np.mean(f, axis=0)
+    print("ftestmean",np.shape(ftestmean))
+    attendedEarTesting = [1]*24 + [2]*12
+    for i in range(np.shape(f)[0]):
+        f[i] = f[i] - ftestmean
+        leftOrRight = np.sign(np.matmul(coefficients, np.squeeze(f[i])) + b)
+        if leftOrRight == -1.:
+            left_right.append(1)
+            if attendedEarTesting[i] == 2:
+                wrong += 1
+        elif leftOrRight == 1.:
+            left_right.append(2)
+            if attendedEarTesting[i] == 1:
+                wrong += 1
+    print("wrong ", str(wrong))
+    print("Accuracy ", str(int(100 - 100*wrong/count)), " %")
+    print(attendedEarTesting)
+
 
     print("f", np.shape(f))
-    print("f_in_classes", np.shape(f_in_classes))
+    # print("f_in_classes", np.shape(f_in_classes))
 
-    f1 = f[:int(np.shape(f)[0]/2)]
-    f2 = f[int(np.shape(f)[0]/2):]
+    f1 = f[:int(2*60/decisionWindow)]
+    f2 = f[int(2*60/decisionWindow):]
     print("f1", np.shape(f1))
     print("f2", np.shape(f2))
 
@@ -690,30 +717,61 @@ def main(parameters):
     plt.figure("feature")
     for i in range(np.shape(f_in_classes[0])[0]):
         green_scat = plt.scatter(f_in_classes[0][i][0], f_in_classes[0][i][-1], color='darkseagreen',
-                                 label='Training Class 1')
+                                 label='Training left')
     for i in range(np.shape(f_in_classes[1])[0]):
         orange_scat = plt.scatter(f_in_classes[1][i][0], f_in_classes[1][i][-1], color='orange',
-                                  label='Training Class 2')
+                                  label='Training right')
     # plt.legend(("Class 1", "Class 2"))
-    plt.title("Feature vectors of 1st and 6th dimension plotted in 2D")
+    if spatialdim ==2:
+        dim = str(spatialdim)+"nd"
+    elif spatialdim ==6:
+        dim = str(spatialdim) + "th"
+    plt.title("Feature vectors of 1st and "+ dim +" dimension plotted in 2D")
     for i in range(int(np.shape(f1)[0])):
-        red_scat = plt.scatter(f1[i][0], f1[i][-1], color='red', label='Testing Class 1')
+        red_scat = plt.scatter(f1[i][0], f1[i][-1], color='red', label='Testing left')
     for i in range(int(np.shape(f2)[0])):
-        blue_scat = plt.scatter(f2[i][0], f2[i][-1], color='navy', label='Testing Class 2')
+        blue_scat = plt.scatter(f2[i][0], f2[i][-1], color='navy', label='Testing right')
+
+    ##boundary:
+    dim1 = np.transpose(np.transpose(f_in_classes)[0])
+    dim2= np.transpose(np.transpose(f_in_classes)[-1])
+    dim1 = dim1[:,:, np.newaxis]
+    dim2 = dim2[:, :, np.newaxis]
+    dim = np.concatenate((dim1,dim2), axis=-1)
+    X = np.concatenate((dim[0], dim[1]), axis=0)
+    # print("X",np.shape(X))
+    # print(np.shape([0]))
+    Y = [1]*np.shape(f_in_classes[0])[0]+[2]*np.shape(f_in_classes[1])[0]
+    # print("Y", np.shape(Y))
+    C = 1.0  # SVM regularization parameter
+    clf = svm.SVC(kernel='linear', gamma=0.7, C=C)
+    clf.fit(X, Y)
+    w = clf.coef_[0]
+    a = -w[0] / w[1]
+    min = np.min(X[:,0])
+    # print(np.shape(min))
+    max = np.max(X[:,0])
+    min += 0.25
+    max+=0.25
+    xx = np.linspace(min, max)
+    yy = a * xx - (clf.intercept_[0]) / w[1]
+    boundary = plt.plot(xx, yy, 'k-', label="Decision boundary")
+
     plt.legend(handles=[green_scat, orange_scat, red_scat, blue_scat])
-    # plt.show()
+    plt.show()
     # name = "/Users/neleeeckman/Desktop/DW"+str(decisionWindow)
-    name = "/Users/neleeeckman/Desktop/CSP2"
-    # name += " Training With " + path_trainingdata[-13:]
-    # name += " Testing With " + path_testingdata[-13:]
-    name += " Training With " + path_trainingdata[-17:]
-    name += " Testing With " + path_testingdata[-17:]
-    # name+=" MinusMean"
+    name = "/Users/neleeeckman/Desktop/CSP" + str(spatialdim)
+    name += " Training With " + path_trainingdata[-13:]
+    name += " Testing With " + path_testingdata[-13:]
+    # name += " Training With " + path_trainingdata[-17:]
+    # name += " Testing With " + path_testingdata[-17:]
+    # name += " MinusMean"
+    name += " Boundary"
     
     # name += trainingDataset[:-4] + "/TIMEFR" + str(decisionWindow) + "_MIN" + str(int(count/60))
     # name = os.getcwd() + "/FeaturePlot" + " Minute " + str(int(count/60))
     # name = os.getcwd() + "/FeaturePlot"
-    plt.savefig(name)
+    # plt.savefig(name)
     plt.close()
 
 
