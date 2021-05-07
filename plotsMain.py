@@ -504,10 +504,10 @@ path = os.getcwd()
 if path.endswith("\GUI"):
     path = path[:-4]
 
-# path_trainingdata = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Realtime TrainingData 04_30_21 with audio")
-# path_testingdata = os.path.join(os.path.join(path, "RealtimeTestingData"), "TestingData 04_30 with audio")
-path_trainingdata = os.path.join(os.path.join(path, "RealtimeData"), "trainingdata1")
-path_testingdata = os.path.join(os.path.join(path, "RealtimeData"), "trainingdata2")
+path_trainingdata = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Realtime TrainingData 06 May 21 15-00")
+path_testingdata = os.path.join(os.path.join(path, "RealtimeTestingData"), "TestingData 06 May 21 15-37")
+# path_trainingdata = os.path.join(os.path.join(path, "RealtimeData"), "trainingdata1")
+# path_testingdata = os.path.join(os.path.join(path, "RealtimeData"), "trainingdata2")
 
 
 path_preset = os.path.join(os.path.join(path, "RealtimeTrainingData"), "Processed TrainingData 30_04 no audio")
@@ -689,24 +689,25 @@ def main(parameters):
 
     plt.figure("feature")
     for i in range(np.shape(f_in_classes[0])[0]):
-        green_scat = plt.scatter(f_in_classes[0][i][0], f_in_classes[0][i][5], color='darkseagreen',
+        green_scat = plt.scatter(f_in_classes[0][i][0], f_in_classes[0][i][-1], color='darkseagreen',
                                  label='Training Class 1')
     for i in range(np.shape(f_in_classes[1])[0]):
-        orange_scat = plt.scatter(f_in_classes[1][i][0], f_in_classes[1][i][5], color='orange',
+        orange_scat = plt.scatter(f_in_classes[1][i][0], f_in_classes[1][i][-1], color='orange',
                                   label='Training Class 2')
     # plt.legend(("Class 1", "Class 2"))
     plt.title("Feature vectors of 1st and 6th dimension plotted in 2D")
     for i in range(int(np.shape(f1)[0])):
-        red_scat = plt.scatter(f1[i][0], f1[i][5], color='red', label='Testing Class 1')
+        red_scat = plt.scatter(f1[i][0], f1[i][-1], color='red', label='Testing Class 1')
     for i in range(int(np.shape(f2)[0])):
-        blue_scat = plt.scatter(f2[i][0], f2[i][5], color='navy', label='Testing Class 2')
+        blue_scat = plt.scatter(f2[i][0], f2[i][-1], color='navy', label='Testing Class 2')
     plt.legend(handles=[green_scat, orange_scat, red_scat, blue_scat])
     # plt.show()
-    name = "/Users/neleeeckman/Desktop/DW"+str(decisionWindow)
-    name += " Training With " + path_trainingdata[-13:]
-    name += " Testing With " + path_testingdata[-13:]
-    # name += " Training With " + path_trainingdata[-17:]
-    # name += " Testing With " + path_testingdata[-17:]
+    # name = "/Users/neleeeckman/Desktop/DW"+str(decisionWindow)
+    name = "/Users/neleeeckman/Desktop/CSP2"
+    # name += " Training With " + path_trainingdata[-13:]
+    # name += " Testing With " + path_testingdata[-13:]
+    name += " Training With " + path_trainingdata[-17:]
+    name += " Testing With " + path_testingdata[-17:]
     # name+=" MinusMean"
     
     # name += trainingDataset[:-4] + "/TIMEFR" + str(decisionWindow) + "_MIN" + str(int(count/60))
